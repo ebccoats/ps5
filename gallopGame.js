@@ -799,13 +799,9 @@ function setTriggerMode(label) {
 
 function pageSetup() {
     console.log("pageSetup")
-    for (let radio of radioButtons) {
-        radio.addEventListener('click', (e) => {
-            let label = e.srcElement.defaultValue
-            setTriggerMode(label)
-        })
-    }
-
+    // setTriggerMode("sineRhythm")
+    // delay(3000)
+    setTriggerMode("fastSineRhythm")
 }
 
 class TriggerSettings {
@@ -971,7 +967,21 @@ function returnSettings(label) {
             settings.set(params)
 
             return settings
-            
+        
+        case "fastSineRhythm":
+            settings = new TriggerSettings("fastSineRhythm", 0x00, 0x23)
+            params = new TriggerParams()
+
+            params.p1 = 0xFF 
+            params.p2 = 0xFF // threshold release depth (ff = no threshold)
+            params.p3 = 0x01 // pattern; nothing at 08 or 09 but 01-0F has patterns
+            params.p4 = 0x05 // frequency/speed?
+            params.p5 = 0x01 
+            params.p6 = 0x01 
+
+            settings.set(params)
+
+            return settings
         case "brightLight":
             settings = new TriggerSettings("brightLight", 0x00, 0x23)
             params = new TriggerParams()
