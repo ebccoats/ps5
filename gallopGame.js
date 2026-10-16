@@ -5,6 +5,8 @@ const PRODUCT_ID_DUAL_SENSE = 0x0ce6;
 const USAGE_PAGE_GENERIC_DESKTOP = 0x0001;
 const USAGE_ID_GD_GAME_PAD = 0x0005;
 
+let vibrationTime = 0;
+
 // Expected report sizes, not including the report ID byte.
 const DUAL_SENSE_USB_INPUT_REPORT_0x01_SIZE = 63;
 const DUAL_SENSE_BT_INPUT_REPORT_0x01_SIZE = 9;
@@ -797,11 +799,39 @@ function setTriggerMode(label) {
     console.log(newTrigger)
 }
 
+
+function gameLoop() {
+  // increment vibration timer
+  vibrationTime++
+  // call updateVibration
+  if (vibrationTime > 120) { // 60 units = 1 second
+    setTriggerMode("fastSineRhythm")
+    vibrationTime = 0
+  }
+
+    window.requestAnimationFrame(gameLoop);
+}
+
+// function gameLoop() {
+  // // increment vibration timer
+  // vibrationTime++
+  // // call updateVibration
+  // if (vibrationTime > 2000) { // more than 3 seconds
+  //   setTriggerMode("fastSineRhythm")
+  //   vibrationTime = 0
+  // }
+//   // do a timeout to call itself again
+//   setInterval(gameLoop, 1000)
+// }
+
 function pageSetup() {
     console.log("pageSetup")
-    // setTriggerMode("sineRhythm")
-    // delay(3000)
-    setTriggerMode("fastSineRhythm")
+    setTriggerMode("sineRhythm")
+
+    window.requestAnimationFrame(gameLoop);
+    // gameLoop()
+    // // delay(3000)
+    // setTriggerMode("fastSineRhythm")
 }
 
 class TriggerSettings {
