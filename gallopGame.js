@@ -44,6 +44,11 @@ const parseHex = value => {
   return parseInt(value, 16);
 };
 
+// Normalize a digital button value to the range [0, +1].
+const normalizeButton = value => {
+  return value ? 1.0 : 0.0;
+};
+
 // Generate CRC32 lookup table.
 const makeCRCTable = () => {
     let c;
@@ -391,6 +396,8 @@ class DualSenseHid {
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
   }
   
+
+
   handleBluetoothInputReport31(report) {
     if (report.byteLength != DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE)
     	return;
@@ -403,7 +410,9 @@ class DualSenseHid {
     let axes4 = report.getUint8(5);
     let axes5 = report.getUint8(6);
     // byte 7?
-    let buttons0 = report.getUint8(8);
+    let buttons0 = report.getUint8(8); 
+    let cross = normalizeButton(buttons0 & 0x20);
+
     let buttons1 = report.getUint8(9);
     let buttons2 = report.getUint8(10);
     // byte 11?
@@ -460,6 +469,8 @@ class DualSenseHid {
     let batteryLevelPercent = (battery0 & 0x0f) * 100 / 8;
     let batteryFull = !!(battery0 & 0x20);
 		let batteryCharging = !!(battery1 & 0x08);
+
+    console.log(cross)
 
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
@@ -806,6 +817,9 @@ let triggerMode = "None";
 function gameLoop() {
   // increment vibration timer
   vibrationTime++
+
+  // console.log(cross)
+
   // call updateVibration
   if (vibrationTime > 120) { // 60 units = 1 second
     if (triggerMode === "sineRhythm") {
