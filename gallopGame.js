@@ -412,6 +412,7 @@ class DualSenseHid {
     // byte 7?
     let buttons0 = report.getUint8(8); 
     let cross = normalizeButton(buttons0 & 0x20);
+    crossPressed = cross;
 
     let buttons1 = report.getUint8(9);
     let buttons2 = report.getUint8(10);
@@ -812,25 +813,31 @@ function setTriggerMode(label) {
 }
 
 let vibrationTime = 0;
-let triggerMode = "None";
+let triggerMode = "none";
+let crossPressed = 0;
 
 function gameLoop() {
   // increment vibration timer
   vibrationTime++
 
-  // console.log(cross)
-
-  // call updateVibration
-  if (vibrationTime > 120) { // 60 units = 1 second
-    if (triggerMode === "sineRhythm") {
-      setTriggerMode("fastSineRhythm")
+  if (crossPressed == 1) {
+    setTriggerMode("none")
+  } else {
+    // call updateVibration
+    if (vibrationTime > 120) { // 60 units = 1 second
+      if (triggerMode === "sineRhythm") {
+        setTriggerMode("fastSineRhythm")
+      }
+      else {
+        setTriggerMode("sineRhythm")
+      }
+      
+      vibrationTime = 0
     }
-    else {
-      setTriggerMode("sineRhythm")
-    }
-    
-    vibrationTime = 0
   }
+
+
+
 
     window.requestAnimationFrame(gameLoop);
 }
