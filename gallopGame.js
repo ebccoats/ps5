@@ -5,7 +5,6 @@ const PRODUCT_ID_DUAL_SENSE = 0x0ce6;
 const USAGE_PAGE_GENERIC_DESKTOP = 0x0001;
 const USAGE_ID_GD_GAME_PAD = 0x0005;
 
-let vibrationTime = 0;
 
 // Expected report sizes, not including the report ID byte.
 const DUAL_SENSE_USB_INPUT_REPORT_0x01_SIZE = 63;
@@ -791,6 +790,8 @@ const radioButtons = document.getElementsByName('triggerMode')
 
 function setTriggerMode(label) {
     let newTrigger = returnSettings(label)
+
+    triggerMode = label
     
     if (window.dshid) {
         window.dshid.setTriggerEffectParams(newTrigger.mode, newTrigger.params)
@@ -799,13 +800,21 @@ function setTriggerMode(label) {
     console.log(newTrigger)
 }
 
+let vibrationTime = 0;
+let triggerMode = "None";
 
 function gameLoop() {
   // increment vibration timer
   vibrationTime++
   // call updateVibration
   if (vibrationTime > 120) { // 60 units = 1 second
-    setTriggerMode("fastSineRhythm")
+    if (triggerMode === "sineRhythm") {
+      setTriggerMode("fastSineRhythm")
+    }
+    else {
+      setTriggerMode("sineRhythm")
+    }
+    
     vibrationTime = 0
   }
 
