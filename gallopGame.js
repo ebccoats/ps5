@@ -450,6 +450,11 @@ class DualSenseHid {
     let battery1 = report.getUint8(54);
     // bytes 55-76?
 
+
+    let lsx = normalizeThumbStickAxis(axes0);
+		let lsy = normalizeThumbStickAxis(axes1);
+		let rsx = normalizeThumbStickAxis(axes2);
+		let rsy = normalizeThumbStickAxis(axes3);
     let l2axis = normalizeTriggerAxis(axes4);
     let r2axis = normalizeTriggerAxis(axes5);
 
@@ -811,59 +816,6 @@ function setTriggerMode(label) {
 
     console.log(newTrigger)
 }
-
-let vibrationTime = 0;
-let triggerMode = "none";
-let crossPressed = 0;
-
-function gameLoop() {
-  // increment vibration timer
-  vibrationTime++
-
-  if (crossPressed == 1) {
-    setTriggerMode("none")
-  } else {
-    // call updateVibration
-    if (vibrationTime > 120) { // 60 units = 1 second
-      if (triggerMode === "sineRhythm") {
-        setTriggerMode("fastSineRhythm")
-      }
-      else {
-        setTriggerMode("sineRhythm")
-      }
-      
-      vibrationTime = 0
-    }
-  }
-
-
-
-
-    window.requestAnimationFrame(gameLoop);
-}
-
-// function gameLoop() {
-  // // increment vibration timer
-  // vibrationTime++
-  // // call updateVibration
-  // if (vibrationTime > 2000) { // more than 3 seconds
-  //   setTriggerMode("fastSineRhythm")
-  //   vibrationTime = 0
-  // }
-//   // do a timeout to call itself again
-//   setInterval(gameLoop, 1000)
-// }
-
-function pageSetup() {
-    console.log("pageSetup")
-    setTriggerMode("sineRhythm")
-
-    window.requestAnimationFrame(gameLoop);
-    // gameLoop()
-    // // delay(3000)
-    // setTriggerMode("fastSineRhythm")
-}
-
 class TriggerSettings {
     label = "none"
     mask = 0x00
@@ -1124,7 +1076,104 @@ function returnSettings(label) {
 
             return settings
 
+        case "rock":
+            settings = new TriggerSettings("rock", 0x00, 0x06)
+            params = new TriggerParams()
+
+            params.p1 = 0x10 // cadence
+            params.p2 = 0x01// depth it will release from (if you are riding the trigger)
+            params.p3 = 0x10 // depth the vibration triggers at (% of trigger pull)
+
+
+            settings.set(params)
+
+            return settings
+
+        case "moth":
+            settings = new TriggerSettings("moth", 0x00, 0x06)
+            params = new TriggerParams()
+
+            params.p1 = 0xFF // cadence
+            params.p2 = 0x10 // depth it will release to 
+            params.p3 = 0x01 // depth the vibration triggers at (% of trigger pull)
+
+
+            settings.set(params)
+
+            return settings
+
+        case "air":
+            settings = new TriggerSettings("air", 0x00, 0x05)
+            params = new TriggerParams()
+
+            settings.set(params)
+
+            return settings
+
             break
     }
+}
+
+// Gallop game BOOKMARK
+let vibrationTime = 0;
+let triggerMode = "none";
+let crossPressed = 0;
+let gameboard = [
+    ["air", "rock"],
+    ["air", "air"],
+    ["air", "moth"]
+]
+
+let playerLocation = {
+    x: 0,
+    y: 1
+}
+
+function gameLoop() {
+  // increment vibration timer
+  vibrationTime++
+
+  if (crossPressed == 1) {
+    setTriggerMode("none")
+  } else {
+    // call updateVibration
+    if (vibrationTime > 120) { // 60 units = 1 second
+      if (triggerMode === "rock") {
+        setTriggerMode("moth")
+      }
+      else {
+        setTriggerMode("rock")
+      }
+      
+      vibrationTime = 0
+    }
+  }
+
+
+
+
+    window.requestAnimationFrame(gameLoop);
+}
+
+// function gameLoop() {
+  // // increment vibration timer
+  // vibrationTime++
+  // // call updateVibration
+  // if (vibrationTime > 2000) { // more than 3 seconds
+  //   setTriggerMode("fastSineRhythm")
+  //   vibrationTime = 0
+  // }
+//   // do a timeout to call itself again
+//   setInterval(gameLoop, 1000)
+// }
+
+function pageSetup() {
+    console.log("pageSetup")
+    setTriggerMode("air")
+
+    window.requestAnimationFrame(gameLoop);
+    // gameLoop()
+    // // delay(3000)
+    // setTriggerMode("fastSineRhythm")
 }
 
