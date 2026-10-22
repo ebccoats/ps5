@@ -49,6 +49,11 @@ const normalizeButton = value => {
   return value ? 1.0 : 0.0;
 };
 
+// Normalize an 8-bit thumbstick axis to the range [-1, +1].
+const normalizeThumbStickAxis = value => {
+  return (2 * value / 0xFF) - 1.0;
+};
+
 // Generate CRC32 lookup table.
 const makeCRCTable = () => {
     let c;
@@ -397,7 +402,6 @@ class DualSenseHid {
   }
   
 
-
   handleBluetoothInputReport31(report) {
     if (report.byteLength != DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE)
     	return;
@@ -476,7 +480,9 @@ class DualSenseHid {
     let batteryFull = !!(battery0 & 0x20);
 		let batteryCharging = !!(battery1 & 0x08);
 
-    console.log(cross)
+    rs_x = rsx
+    rs_y = rsy
+
 
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
@@ -1118,11 +1124,19 @@ function returnSettings(label) {
 let vibrationTime = 0;
 let triggerMode = "none";
 let crossPressed = 0;
+let rs_x = 0
+let rs_y = 0
 let gameboard = [
     ["air", "rock"],
     ["air", "air"],
     ["air", "moth"]
 ]
+
+// map this to the tile coordinates for bat game
+let rightJoystick = {
+    x: 0,
+    y: 0
+}
 
 let playerLocation = {
     x: 0,
@@ -1133,20 +1147,38 @@ function gameLoop() {
   // increment vibration timer
   vibrationTime++
 
+    // process right joystick
+    // TODO create joystick class
+    if (rs_x > 0.03 || rs_x < -0.03) {
+        let gridCoordsX = Math.round(rs_x)
+        playerLocation.x = gridCoordsX
+    } else {
+        playerLocation.x = 0
+    }
+    if (rs_y > 0.03 || rs_y < -0.03) {
+        let gridCoordsY = Math.round(rs_y)
+        playerLocation.y = gridCoordsY
+    } else {
+        playerLocation.y = 0
+    }
+
+    console.log(playerLocation)
+
   if (crossPressed == 1) {
     setTriggerMode("none")
   } else {
     // call updateVibration
-    if (vibrationTime > 120) { // 60 units = 1 second
-      if (triggerMode === "rock") {
+      // something wrong here 
+      if (playerLocation.x === 1 && playerLocation.y === -0) {
+        setTriggerMode("rock")
+      }
+      if (playerLocation.x === 0 && playerLocation.y === -1) {
         setTriggerMode("moth")
       }
       else {
-        setTriggerMode("rock")
+        setTriggerMode("air")
       }
       
-      vibrationTime = 0
-    }
   }
 
 
