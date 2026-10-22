@@ -480,8 +480,7 @@ class DualSenseHid {
     let batteryFull = !!(battery0 & 0x20);
 		let batteryCharging = !!(battery1 & 0x08);
 
-    rs_x = rsx
-    rs_y = rsy
+    rightJoyStick.update(rsx, rsy)
 
 
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
@@ -819,8 +818,7 @@ function setTriggerMode(label) {
     if (window.dshid) {
         window.dshid.setTriggerEffectParams(newTrigger.mode, newTrigger.params)
     }
-
-    console.log(newTrigger)
+    console.log("New Trigger", newTrigger)
 }
 class TriggerSettings {
     label = "none"
@@ -1120,9 +1118,54 @@ function returnSettings(label) {
     }
 }
 
+
+class RightJoyStick {
+
+  constructor() {
+  }
+
+  update(x,y) {
+    self.x = x
+    self.y = y
+    // console.log(`Updated to x=${x}, y=${y}`)
+  }
+
+  // hasTriggered is True if the joystick is not near neutral position
+  hasTriggered() {
+    let hasTriggered = (self.x > 0.04 || self.x < -0.04 || self.y > 0.04 || self.y < -0.04  )
+    // console.log(`Has Triggered ${hasTriggered}`)
+    return hasTriggered
+  }
+
+  getRoundedPositions() {
+    return [Math.round(self.x), Math.round(self.y)]
+  }
+
+}
+
+class Player {
+
+  constructor() {
+    self.x = 0
+    self.y = 1
+  }
+
+  update_location(x,y) {
+    self.x = x
+    self.y = y
+  }
+
+  get_location() {
+    return [self.x, self.y]
+  }
+}
+
+
 // Gallop game BOOKMARK
 let vibrationTime = 0;
 let triggerMode = "none";
+let rightJoyStick = new RightJoyStick();
+let player = new Player();
 let crossPressed = 0;
 let rs_x = 0
 let rs_y = 0
@@ -1133,15 +1176,13 @@ let gameboard = [
 ]
 
 // map this to the tile coordinates for bat game
-let rightJoystick = {
-    x: 0,
-    y: 0
-}
+// let rightJoystick = {
+//     x: 0,
+//     y: 0
+// }
 
-let playerLocation = {
-    x: 0,
-    y: 1
-}
+
+
 
 function gameLoop() {
   // increment vibration timer
@@ -1149,30 +1190,23 @@ function gameLoop() {
 
     // process right joystick
     // TODO create joystick class
-    if (rs_x > 0.03 || rs_x < -0.03) {
-        let gridCoordsX = Math.round(rs_x)
-        playerLocation.x = gridCoordsX
-    } else {
-        playerLocation.x = 0
-    }
-    if (rs_y > 0.03 || rs_y < -0.03) {
-        let gridCoordsY = Math.round(rs_y)
-        playerLocation.y = gridCoordsY
-    } else {
-        playerLocation.y = 0
-    }
+    if (rightJoyStick.hasTriggered()) {
+      let [x,y] = rightJoyStick.getRoundedPositions()
+      console.log("Joystick Position:", x,y)
+      player.update_location(x,y)
+    } 
 
-    console.log(playerLocation)
+    console.log(`Player Location: ${player.get_location()}`)
 
   if (crossPressed == 1) {
     setTriggerMode("none")
   } else {
     // call updateVibration
       // something wrong here 
-      if (playerLocation.x === 1 && playerLocation.y === -0) {
+      if (player.get_location()[0] == 1) {
         setTriggerMode("rock")
       }
-      if (playerLocation.x === 0 && playerLocation.y === -1) {
+      else if (player.get_location()[1] == 1) {
         setTriggerMode("moth")
       }
       else {
@@ -1184,7 +1218,7 @@ function gameLoop() {
 
 
 
-    window.requestAnimationFrame(gameLoop);
+  window.requestAnimationFrame(gameLoop);
 }
 
 // function gameLoop() {
