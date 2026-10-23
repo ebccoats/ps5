@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DualSense gallop test</title>
+    <style>
+        :root { color-scheme: light; }
+        body { background: #fff; color: #000; margin: 16px; font-family: sans-serif; }
+        label { display: block; }
+    </style>
+</head>
+<body>
+    <script src="dualsense-gallop.js"></script>
+    <script>
+        const dsHandler = new GameControllerWebHandler();
+
+        const TRIGGER_MODES = [
+            { value: "linear", label: "Linear resistance", mode: 0x21, params: [0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00] },
+            { value: "linearTough", label: "Linear tougher resistance", mode: 0x21, params: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff] },
+            { value: "nonlinear", label: "Nonlinear resistance", mode: 0x22, params: [0xf5, 0xd0, 0x30, 0xff, 0x00, 0x00, 0x00] },
+            { value: "threshold", label: "Weapon/linear threshold", mode: 0x25, params: [0x90, 0xa0, 0xff, 0x00, 0x00, 0x00, 0x00] },
+            { value: "bowThreshold", label: "Bow/nonlinear threshold", mode: 0x22, params: [0xff, 0x30, 0xff, 0x30, 0x00, 0x00, 0x00] },
+            { value: "vibration", label: "Vibration", mode: 0x06, params: [0x50, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00] },
+            { value: "heartbeat", label: "Heartbeat", mode: 0x06, params: [0x01, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00] },
+            { value: "mosquito", label: "Mosquito", mode: 0x06, params: [0xff, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00] },
+            { value: "sineRhythm", label: "Gallop/Sine wave pattern", mode: 0x23, params: [0xff, 0xff, 0x01, 0x02, 0x01, 0x01, 0x00] },
+            { value: "brightLight", label: "Bright light?", mode: 0x23, params: [0xff, 0x01, 0x02, 0x60, 0x01, 0x01, 0x00] },
+            { value: "helicopter", label: "Riding in a helicopter", mode: 0x23, params: [0xff, 0x01, 0x02, 0x10, 0x01, 0x01, 0x00] },
+            { value: "squareRhythm", label: "Machine/Square wave pattern", mode: 0x27, params: [0x10, 0xff, 0x03, 0x10, 0x3f, 0xdf, 0x00] },
+            { value: "fadingbuzz", label: "Fading buzz", mode: 0x27, params: [0x10, 0xff, 0x03, 0x30, 0x3f, 0xdf, 0x00] },
+            { value: "none", label: "Reset after next pull", mode: 0x00, params: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+            { value: "limp", label: "Full zero", mode: 0x05, params: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+        ];
+
+        const BUTTON_FIELDS = [
+            ["buttoncross", "cross"],
+            ["buttoncircle", "circle"],
+            ["buttonsquare", "square"],
+            ["buttontriangle", "triangle"],
+            ["buttonl1", "l1"],
+            ["buttonr1", "r1"],
+            ["buttonl2", "l2"],
+            ["buttonr2", "r2"],
+            ["buttoncreate", "create"],
+            ["buttonoptions", "options"],
+            ["buttonl3", "l3"],
+            ["buttonr3", "r3"],
+            ["dpadup", "up"],
+            ["dpaddown", "down"],
+            ["dpadleft", "left"],
+            ["dpadright", "right"],
+            ["buttonps", "ps"],
+            ["buttontouchpad", "touchpad"],
+            ["buttonmute", "mute"],
+        ];
+
+        const ui = {};
+        const reportSeen = new WeakMap();
+
+        function hex16(value) {
+            return ("0000" + (value >>> 0).toString(16)).slice(-4);
+        }
+
+        function hexByte(value) {
+            return (value & 0xff).toString(16);
+        }
+
+        function addBreak(parent) {
+            parent.appendChild(document.createElement("br"));
+        }
+
+        function addCheckbox(parent, id, label, disabled) {
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.id = id;
+            input.disabled = !!disabled;
+            ui[id] = input;
+            parent.appendChild(input);
+            parent.appendChild(document.createTextNode(label));
+            addBreak(parent);
+        }
+
+        function addText(parent, id, label, options) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.id = id;
+            input.style.textAlign = "right";
+            input.style.width = (options && options.width) || "50px";
+            input.disabled = !!(options && options.disabled);
+            if (options && options.value != null)
+                input.value = options.value;
+            ui[id] = input;
+            parent.appendChild(input);
+            parent.appendChild(document.createTextNode(label));
+            addBreak(parent);
+        }
+
+        function addCheckboxAndText(parent, checkId, textId, label) {
+            const check = document.createElement("input");
+            check.type = "checkbox";
+            check.id = checkId;
+            check.disabled = true;
+            ui[checkId] = check;
+            const text = document.createElement("input");
+            text.type = "text";
+            text.id = textId;
+            text.disabled = true;
+            text.style.textAlign = "right";
+            text.style.width = "50px";
+            ui[textId] = text;
+            parent.appendChild(check);
+            parent.appendChild(text);
+            parent.appendChild(document.createTextNode(label));
+            addBreak(parent);
+        }
+
+        function addSelect(parent, id, label, options) {
+            const select = document.createElement("select");
+            select.id = id;
+            for (const option of options) {
+                const el = document.createElement("option");
+                el.value = option.value;
+                el.textContent = option.label;
+                el.selected = !!option.selected;
+                select.appendChild(el);
+            }
+            ui[id] = select;
+            parent.appendChild(select);
+            parent.appendChild(document.createTextNode(label));
+            addBreak(parent);
+        }
+
+        function addGroup(parent, text) {
+            const heading = document.createElement("p");
+            const strong = document.createElement("strong");
+            strong.textContent = text;
+            heading.appendChild(strong);
+            parent.appendChild(heading);
+        }
+
+        function addRange(parent, id, label, options) {
+            const input = document.createElement("input");
+            input.type = "range";
+            input.id = id;
+            input.min = options && options.min != null ? String(options.min) : "0";
+            input.max = options && options.max != null ? String(options.max) : "255";
+            input.value = options && options.value != null ? String(options.value) : input.max;
+            ui[id] = input;
+            parent.appendChild(input);
+            parent.appendChild(document.createTextNode(label));
+            addBreak(parent);
+        }
+
+        function addHeading(text) {
+            const heading = document.createElement("h3");
+            heading.textContent = text;
+            document.body.appendChild(heading);
+        }
+
+        function addTextarea(id) {
+            const area = document.createElement("textarea");
+            area.id = id;
+            area.cols = 48;
+            area.rows = 6;
+            area.disabled = true;
+            ui[id] = area;
+            document.body.appendChild(area);
+            addBreak(document.body);
+        }
+
+        function effectSetting(prefix) {
+            return {
+                mode: ui[prefix + "effectmode"].value,
+                p1: ui[prefix + "effectparam1"].value,
+                p2: ui[prefix + "effectparam2"].value,
+                p3: ui[prefix + "effectparam3"].value,
+                p4: ui[prefix + "effectparam4"].value,
+                p5: ui[prefix + "effectparam5"].value,
+                p6: ui[prefix + "effectparam6"].value,
+                p7: ui[prefix + "effectparam7"].value,
+                p8: ui[prefix + "effectparam8"].value,
+                p9: ui[prefix + "effectparam9"].value,
+                p10: ui[prefix + "effectparam10"].value,
+            };
+        }
+
+        function writeEffectFields(prefix, mode, params) {
+            ui[prefix + "effectmode"].value = hexByte(mode);
+            for (let i = 0; i < 7; i++)
+                ui[prefix + "effectparam" + (i + 1)].value = hexByte(params[i] || 0);
+        }
+
+        function applyPreset(mode) {
+            writeEffectFields("l2", mode.mode, mode.params);
+            writeEffectFields("r2", mode.mode, mode.params);
+        }
+
+        function buildPage() {
+            const title = document.createElement("h1");
+            title.textContent = "DualSense gallop test";
+            document.body.appendChild(title);
+
+            const connectLine = document.createElement("p");
+            const connectButton = document.createElement("button");
+            connectButton.type = "button";
+            connectButton.textContent = "Connect DualSense";
+            connectButton.addEventListener("click", () => dsHandler.requestDevice());
+            connectLine.appendChild(document.createTextNode("Connect with Bluetooth or USB, then click "));
+            connectLine.appendChild(connectButton);
+            connectLine.appendChild(document.createTextNode(". Click Connect again to add the other interface."));
+            document.body.appendChild(connectLine);
+
+            const status = document.createElement("p");
+            status.id = "status";
+            status.textContent = "No DualSense connected";
+            document.body.appendChild(status);
+            ui.status = status;
+
+            document.body.appendChild(document.createElement("hr"));
+            addHeading("Device information");
+            const deviceInfo = document.createElement("div");
+            deviceInfo.appendChild(document.createTextNode("Connected device: "));
+            addText(deviceInfo, "productname", "", { width: "240px", disabled: true });
+            deviceInfo.appendChild(document.createTextNode("Vendor and Product ID: "));
+            addText(deviceInfo, "vidpid", "", { width: "100px", disabled: true });
+            deviceInfo.appendChild(document.createTextNode("Connection type: "));
+            addText(deviceInfo, "connectiontype", "", { width: "100px", disabled: true });
+            document.body.appendChild(deviceInfo);
+
+            document.body.appendChild(document.createElement("hr"));
+            addHeading("Input report");
+            addTextarea("inputreport");
+
+            const inputFields = document.createElement("div");
+            addCheckbox(inputFields, "buttoncross", "Cross button", true);
+            addCheckbox(inputFields, "buttoncircle", "Circle button", true);
+            addCheckbox(inputFields, "buttonsquare", "Square button", true);
+            addCheckbox(inputFields, "buttontriangle", "Triangle button", true);
+            addCheckbox(inputFields, "buttonl1", "L1 button", true);
+            addCheckbox(inputFields, "buttonr1", "R1 button", true);
+            addCheckboxAndText(inputFields, "buttonl2", "triggerl2", "L2 trigger");
+            addCheckboxAndText(inputFields, "buttonr2", "triggerr2", "R2 trigger");
+            addCheckbox(inputFields, "buttoncreate", "Create button", true);
+            addCheckbox(inputFields, "buttonoptions", "Options button", true);
+            addCheckbox(inputFields, "buttonl3", "L3 button", true);
+            addCheckbox(inputFields, "buttonr3", "R3 button", true);
+            addCheckbox(inputFields, "dpadup", "Dpad up", true);
+            addCheckbox(inputFields, "dpaddown", "Dpad down", true);
+            addCheckbox(inputFields, "dpadleft", "Dpad left", true);
+            addCheckbox(inputFields, "dpadright", "Dpad right", true);
+            addCheckbox(inputFields, "buttonps", "PS button", true);
+            addCheckbox(inputFields, "buttontouchpad", "Touchpad button", true);
+            addCheckbox(inputFields, "buttonmute", "Mute button", true);
+            addText(inputFields, "leftstickx", "Left thumbstick X", { disabled: true });
+            addText(inputFields, "leftsticky", "Left thumbstick Y", { disabled: true });
+            addText(inputFields, "rightstickx", "Right thumbstick X", { disabled: true });
+            addText(inputFields, "rightsticky", "Right thumbstick Y", { disabled: true });
+            addCheckbox(inputFields, "touch0active", "Touchpoint 0 active", true);
+            addText(inputFields, "touch0id", "Touchpoint 0 ID", { disabled: true });
+            addText(inputFields, "touch0x", "Touchpoint 0 X", { disabled: true });
+            addText(inputFields, "touch0y", "Touchpoint 0 Y", { disabled: true });
+            addCheckbox(inputFields, "touch1active", "Touchpoint 1 active", true);
+            addText(inputFields, "touch1id", "Touchpoint 1 ID", { disabled: true });
+            addText(inputFields, "touch1x", "Touchpoint 1 X", { disabled: true });
+            addText(inputFields, "touch1y", "Touchpoint 1 Y", { disabled: true });
+            addText(inputFields, "gyrox", "Gyroscope X", { disabled: true });
+            addText(inputFields, "gyroy", "Gyroscope Y", { disabled: true });
+            addText(inputFields, "gyroz", "Gyroscope Z", { disabled: true });
+            addText(inputFields, "accelx", "Accelerometer X", { disabled: true });
+            addText(inputFields, "accely", "Accelerometer Y", { disabled: true });
+            addText(inputFields, "accelz", "Accelerometer Z", { disabled: true });
+            addCheckbox(inputFields, "l2force", "L2 adaptive trigger effect", true);
+            addText(inputFields, "l2state", "L2 trigger state", { disabled: true });
+            addCheckbox(inputFields, "r2force", "R2 adaptive trigger effect", true);
+            addText(inputFields, "r2state", "R2 trigger state", { disabled: true });
+            addCheckbox(inputFields, "batterycharging", "Charging", true);
+            addCheckbox(inputFields, "batteryfull", "Fully charged", true);
+            addText(inputFields, "batterylevel", "Battery level", { disabled: true });
+            document.body.appendChild(inputFields);
+
+            document.body.appendChild(document.createElement("hr"));
+            addHeading("Output report");
+            addTextarea("outputreport");
+
+            const outputFields = document.createElement("div");
+            addGroup(outputFields, "Rumble");
+            addRange(outputFields, "rumbleleft", "Left rumble", { value: 0 });
+            addRange(outputFields, "rumbleright", "Right rumble", { value: 0 });
+            addRange(outputFields, "rumblereduction", "Rumble reduction", { max: 15, value: 0 });
+            addRange(outputFields, "triggersoftness", "Trigger softness", { max: 15, value: 0 });
+
+            addGroup(outputFields, "Lightbar");
+            addRange(outputFields, "lightbarr", "Lightbar Red");
+            addRange(outputFields, "lightbarg", "Lightbar Green");
+            addRange(outputFields, "lightbarb", "Lightbar Blue");
+            addRange(outputFields, "lightbarbrightness", "Lightbar brightness");
+            addSelect(outputFields, "lightbarsetup", "Lightbar setup", [
+                { value: "0", label: "Steady", selected: true },
+                { value: "1", label: "Fade blue" },
+                { value: "2", label: "Fade out" },
+            ]);
+
+            addGroup(outputFields, "Player LEDs");
+            addCheckbox(outputFields, "playerLed1", "Player LED 1", false);
+            addCheckbox(outputFields, "playerLed2", "Player LED 2", false);
+            addCheckbox(outputFields, "playerLed3", "Player LED 3", false);
+            addCheckbox(outputFields, "playerLed4", "Player LED 4", false);
+            addCheckbox(outputFields, "playerLed5", "Player LED 5", false);
+            addSelect(outputFields, "playerledbrightness", "Player LED brightness", [
+                { value: "0", label: "High", selected: true },
+                { value: "1", label: "Medium" },
+                { value: "2", label: "Low" },
+            ]);
+            addCheckbox(outputFields, "releaseleds", "Release LEDs", false);
+
+            addGroup(outputFields, "Microphone");
+            addSelect(outputFields, "muteLed", "Microphone mute LED", [
+                { value: "0", label: "Off", selected: true },
+                { value: "1", label: "On" },
+                { value: "2", label: "Pulse" },
+            ]);
+
+            addGroup(outputFields, "Audio");
+            addRange(outputFields, "headphonevolume", "Headphone volume", { max: 127, value: 0 });
+            addRange(outputFields, "speakervolume", "Speaker volume", { value: 0 });
+            addRange(outputFields, "micvolume", "Microphone volume", { max: 64, value: 0 });
+            addRange(outputFields, "speakerpreamp", "Speaker preamp", { max: 7, value: 0 });
+            addSelect(outputFields, "audiopath", "Audio output", [
+                { value: "0", label: "Off", selected: true },
+                { value: "2", label: "Headset" },
+                { value: "48", label: "Speaker" },
+                { value: "34", label: "Headset and speaker" },
+            ]);
+            addSelect(outputFields, "tonemode", "Test tone", [
+                { value: "beep", label: "Beep" },
+                { value: "continuous", label: "Continuous", selected: true },
+            ]);
+            const toneButton = document.createElement("button");
+            toneButton.type = "button";
+            toneButton.id = "testtone";
+            toneButton.textContent = "Play test tone";
+            toneButton.addEventListener("click", () => toggleTestTone(toneButton));
+            ui.testtone = toneButton;
+            outputFields.appendChild(toneButton);
+            const computerButton = document.createElement("button");
+            computerButton.type = "button";
+            computerButton.id = "computertone";
+            computerButton.textContent = "Play on computer";
+            computerButton.addEventListener("click", () => toggleComputerTone(computerButton));
+            outputFields.appendChild(document.createTextNode(" "));
+            outputFields.appendChild(computerButton);
+            const toneNote = document.createElement("span");
+            toneNote.id = "tonenote";
+            ui.tonenote = toneNote;
+            outputFields.appendChild(document.createTextNode(" "));
+            outputFields.appendChild(toneNote);
+            addBreak(outputFields);
+
+            addGroup(outputFields, "Power save");
+            addCheckbox(outputFields, "powersavetouch", "Touch", false);
+            addCheckbox(outputFields, "powersavemotion", "Motion", false);
+            addCheckbox(outputFields, "powersavehaptics", "Haptics", false);
+            addCheckbox(outputFields, "powersaveaudio", "Audio", false);
+            addCheckbox(outputFields, "mutespeaker", "Mute speaker", false);
+            addCheckbox(outputFields, "muteheadphones", "Mute headphones", false);
+            addCheckbox(outputFields, "mutehaptics", "Mute haptics", false);
+            document.body.appendChild(outputFields);
+
+            const presetWrap = document.createElement("div");
+            const fieldset = document.createElement("fieldset");
+            const legend = document.createElement("legend");
+            legend.textContent = "Trigger presets";
+            fieldset.appendChild(legend);
+            for (const mode of TRIGGER_MODES) {
+                const label = document.createElement("label");
+                const radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = "triggerMode";
+                radio.value = mode.value;
+                radio.checked = mode.value === "limp";
+                radio.addEventListener("click", () => applyPreset(mode));
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(mode.label));
+                fieldset.appendChild(label);
+            }
+            presetWrap.appendChild(fieldset);
+            document.body.appendChild(presetWrap);
+
+            const effectFields = document.createElement("div");
+            const sides = [
+                ["l2", "L2", "26", "90", "A0", "FF"],
+                ["r2", "R2", "26", "90", "A0", "FF"],
+            ];
+            for (const [prefix, name, mode, p1, p2, p3] of sides) {
+                addText(effectFields, prefix + "effectmode", name + " trigger effect mode", { value: mode });
+                addText(effectFields, prefix + "effectparam1", name + " trigger effect parameter 1", { value: p1 });
+                addText(effectFields, prefix + "effectparam2", name + " trigger effect parameter 2", { value: p2 });
+                addText(effectFields, prefix + "effectparam3", name + " trigger effect parameter 3", { value: p3 });
+                addText(effectFields, prefix + "effectparam4", name + " trigger effect parameter 4");
+                addText(effectFields, prefix + "effectparam5", name + " trigger effect parameter 5");
+                addText(effectFields, prefix + "effectparam6", name + " trigger effect parameter 6");
+                addText(effectFields, prefix + "effectparam7", name + " trigger effect parameter 7");
+                addText(effectFields, prefix + "effectparam8", name + " trigger effect parameter 8");
+                addText(effectFields, prefix + "effectparam9", name + " trigger effect parameter 9");
+                addText(effectFields, prefix + "effectparam10", name + " trigger effect parameter 10");
+            }
+            document.body.appendChild(effectFields);
+        }
+
+        function noteReport(controller) {
+            const hex = controller.inputReportHex || "";
+            const previous = reportSeen.get(controller);
+            if (!previous || previous.hex !== hex)
+                reportSeen.set(controller, { hex: hex, at: performance.now() });
+            return reportSeen.get(controller);
+        }
+
+        function activeController(open) {
+            let chosen = open[0];
+            let newest = -1;
+            for (const controller of open) {
+                const seen = noteReport(controller);
+                if (seen && seen.hex && seen.at >= newest) {
+                    chosen = controller;
+                    newest = seen.at;
+                }
+            }
+            return chosen;
+        }
+
+        function setChecked(id, value) {
+            ui[id].checked = !!value;
+        }
+
+        function showStick(id, value) {
+            ui[id].value = value == null ? "" : Number(value).toFixed(2);
+        }
+
+        function showOptional(id, value, missingText) {
+            ui[id].value = value == null ? (missingText || "") : value;
+        }
+
+        function showInput(controller) {
+            const input = controller && controller.input;
+            ui.inputreport.value = controller ? (controller.inputReportHex || "") : "";
+            if (!input) {
+                for (const [id] of BUTTON_FIELDS)
+                    ui[id].checked = false;
+                ui.triggerl2.value = "";
+                ui.triggerr2.value = "";
+                return;
+            }
+
+            for (const [id, key] of BUTTON_FIELDS)
+                setChecked(id, input[key]);
+
+            ui.triggerl2.value = input.l2axis == null ? "" : Math.round(input.l2axis * 100) + "%";
+            ui.triggerr2.value = input.r2axis == null ? "" : Math.round(input.r2axis * 100) + "%";
+            showStick("leftstickx", input.lsx);
+            showStick("leftsticky", input.lsy);
+            showStick("rightstickx", input.rsx);
+            showStick("rightsticky", input.rsy);
+
+            const touchMissing = input.touch0id == null;
+            setChecked("touch0active", input.touch0active);
+            setChecked("touch1active", input.touch1active);
+            showOptional("touch0id", input.touch0id, touchMissing ? "N/A" : "");
+            showOptional("touch0x", input.touch0x, "");
+            showOptional("touch0y", input.touch0y, "");
+            showOptional("touch1id", input.touch1id, touchMissing ? "N/A" : "");
+            showOptional("touch1x", input.touch1x, "");
+            showOptional("touch1y", input.touch1y, "");
+
+            showOptional("gyrox", input.gyrox, "");
+            showOptional("gyroy", input.gyroy, "");
+            showOptional("gyroz", input.gyroz, "");
+            showOptional("accelx", input.accelx, "");
+            showOptional("accely", input.accely, "");
+            showOptional("accelz", input.accelz, "");
+
+            if (input.l2feedback == null) {
+                ui.l2force.checked = false;
+                ui.l2state.value = "";
+                ui.r2force.checked = false;
+                ui.r2state.value = "";
+            } else {
+                ui.l2force.checked = !!(input.l2feedback & 0x10);
+                ui.l2state.value = input.l2feedback & 0x0f;
+                ui.r2force.checked = !!(input.r2feedback & 0x10);
+                ui.r2state.value = input.r2feedback & 0x0f;
+            }
+
+            if (input.batteryLevelPercent == null) {
+                ui.batterycharging.checked = false;
+                ui.batteryfull.checked = false;
+                ui.batterylevel.value = "N/A";
+            } else {
+                ui.batterycharging.checked = !!input.batteryCharging;
+                ui.batteryfull.checked = !!input.batteryFull;
+                ui.batterylevel.value = input.batteryLevelPercent + "%";
+            }
+        }
+
+        function showDevice(controller) {
+            const device = controller && controller.device_;
+            ui.productname.value = device && device.productName ? device.productName : "";
+            ui.vidpid.value = device ? hex16(device.vendorId) + ":" + hex16(device.productId) : "";
+            ui.connectiontype.value = controller ? controller.connectionType_ : "";
+        }
+
+        function pushEffects(controller) {
+            const left = effectSetting("l2");
+            const right = effectSetting("r2");
+            controller.changeTriggerEffect("left", { mode: left.mode }, left.p1, left.p2, left.p3, left.p4, left.p5, left.p6, left.p7, left.p8, left.p9, left.p10);
+            controller.changeTriggerEffect("right", { mode: right.mode }, right.p1, right.p2, right.p3, right.p4, right.p5, right.p6, right.p7, right.p8, right.p9, right.p10);
+        }
+
+        function applyOutput(controller) {
+            pushEffects(controller);
+            const red = Number(ui.lightbarr.value);
+            const green = Number(ui.lightbarg.value);
+            const blue = Number(ui.lightbarb.value);
+            controller.changeLightbarColor(red, green, blue);
+            controller.changeLightbarBrightness(Number(ui.lightbarbrightness.value));
+            controller.lightbarRed_ = red;
+            controller.lightbarGreen_ = green;
+            controller.lightbarBlue_ = blue;
+            controller.changeLightbarSetup(Number(ui.lightbarsetup.value));
+            controller.changePlayerLedBrightness(Number(ui.playerledbrightness.value));
+            controller.playerLeds_ = (ui.playerLed1.checked ? 0x01 : 0)
+                | (ui.playerLed2.checked ? 0x02 : 0)
+                | (ui.playerLed3.checked ? 0x04 : 0)
+                | (ui.playerLed4.checked ? 0x08 : 0)
+                | (ui.playerLed5.checked ? 0x10 : 0);
+            controller.releaseLeds(ui.releaseleds.checked);
+            controller.mute(Number(ui.muteLed.value));
+            controller.changeRumble(Number(ui.rumbleleft.value), Number(ui.rumbleright.value));
+            controller.changeOutputTuning(
+                Number(ui.rumblereduction.value),
+                Number(ui.triggersoftness.value),
+                Number(ui.speakerpreamp.value)
+            );
+            controller.changeAudio(
+                Number(ui.headphonevolume.value),
+                Number(ui.speakervolume.value),
+                Number(ui.micvolume.value),
+                Number(ui.audiopath.value)
+            );
+            controller.changePowerSave(
+                (ui.powersavetouch.checked ? 0x01 : 0)
+                | (ui.powersavemotion.checked ? 0x02 : 0)
+                | (ui.powersavehaptics.checked ? 0x04 : 0)
+                | (ui.powersaveaudio.checked ? 0x08 : 0)
+                | (ui.mutespeaker.checked ? 0x20 : 0)
+                | (ui.muteheadphones.checked ? 0x40 : 0)
+                | (ui.mutehaptics.checked ? 0x80 : 0)
+            );
+        }
+
+        const sending = new WeakSet();
+        const toneControllers = new Set();
+        let toneOn = false;
+        let toneTimer = null;
+        let toneContext = null;
+        let toneOsc = null;
+        let toneSinkId = null;
+        let toneFrameIndex = 0;
+        let computerOn = false;
+        let computerContext = null;
+        let computerOsc = null;
+        let computerTimer = null;
+        let toneEncoder = null;
+        let toneQueue = [];
+        let tonePending = 0;
+        let tonePhase = 0;
+        let toneTimestamp = 0;
+
+        const TONE_FRAMES_B64 = "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";
+
+        function decodedToneFrames() {
+            if (decodedToneFrames.cache)
+                return decodedToneFrames.cache;
+            const raw = Uint8Array.from(atob(TONE_FRAMES_B64), c => c.charCodeAt(0));
+            const frames = [];
+            for (let i = 0; i < raw.length; i += 200)
+                frames.push(raw.subarray(i, i + 200));
+            decodedToneFrames.cache = frames;
+            return frames;
+        }
+
+        function prepareToneLevels() {
+            if (ui.audiopath.value === "0")
+                ui.audiopath.value = "48";
+            if (ui.audiopath.value === "2" || ui.audiopath.value === "34") {
+                if (Number(ui.headphonevolume.value) === 0)
+                    ui.headphonevolume.value = "80";
+            }
+            if (ui.audiopath.value !== "2" && Number(ui.speakervolume.value) === 0) {
+                ui.speakervolume.value = "100";
+            }
+            if (Number(ui.speakerpreamp.value) === 0)
+                ui.speakerpreamp.value = "2";
+        }
+
+        function closeToneEncoder() {
+            if (toneEncoder) {
+                try { toneEncoder.close(); } catch (e) {}
+                toneEncoder = null;
+            }
+            toneQueue = [];
+            tonePending = 0;
+        }
+
+        function openToneEncoder() {
+            closeToneEncoder();
+            tonePhase = 0;
+            toneTimestamp = 0;
+            toneEncoder = new AudioEncoder({
+                output: chunk => {
+                    tonePending = Math.max(0, tonePending - 1);
+                    if (!toneOn || chunk.byteLength !== 200)
+                        return;
+                    const frame = new Uint8Array(200);
+                    chunk.copyTo(frame);
+                    toneQueue.push(frame);
+                },
+                error: () => {}
+            });
+            toneEncoder.configure({
+                codec: "opus",
+                sampleRate: 48000,
+                numberOfChannels: 2,
+                bitrate: 160000,
+                bitrateMode: "constant",
+                latencyMode: "realtime",
+                opus: { frameDuration: 10000, complexity: 0 }
+            });
+        }
+
+        function encodeToneFrame() {
+            if (!toneEncoder || toneEncoder.state !== "configured")
+                return;
+            const left = new Float32Array(480);
+            const right = new Float32Array(480);
+            // The controller plays each 480-sample frame across a 512-sample tick.
+            // Packing 512 samples of the tone into the frame is what removes the click.
+            const compress = 512 / 480;
+            for (let i = 0; i < 480; i++) {
+                const pos = tonePhase + i * compress;
+                const i0 = Math.floor(pos);
+                const frac = pos - i0;
+                const s0 = Math.sin(2 * Math.PI * 440 * i0 / 48000);
+                const s1 = Math.sin(2 * Math.PI * 440 * (i0 + 1) / 48000);
+                const sample = s0 * (1 - frac) + s1 * frac;
+                left[i] = sample;
+                right[i] = sample;
+            }
+            tonePhase += 512;
+            const data = new Float32Array(960);
+            data.set(left, 0);
+            data.set(right, 480);
+            const audio = new AudioData({
+                format: "f32-planar",
+                sampleRate: 48000,
+                numberOfFrames: 480,
+                numberOfChannels: 2,
+                timestamp: toneTimestamp,
+                data
+            });
+            toneTimestamp += 10000;
+            tonePending++;
+            try {
+                toneEncoder.encode(audio);
+            } catch (e) {
+                tonePending--;
+            }
+            audio.close();
+        }
+
+        function stopTestTone(button) {
+            toneOn = false;
+            closeToneEncoder();
+            if (toneTimer) {
+                clearTimeout(toneTimer);
+                toneTimer = null;
+            }
+            if (toneOsc) {
+                try { toneOsc.stop(); } catch (e) {}
+                toneOsc = null;
+            }
+            if (toneContext) {
+                toneContext.close();
+                toneContext = null;
+            }
+            for (const controller of toneControllers)
+                controller.speakerTone_ = false;
+            toneControllers.clear();
+            button.textContent = "Play test tone";
+            ui.tonenote.textContent = "";
+        }
+
+        function stopComputerTone(button) {
+            computerOn = false;
+            if (computerTimer) {
+                clearTimeout(computerTimer);
+                computerTimer = null;
+            }
+            if (computerOsc) {
+                try { computerOsc.stop(); } catch (e) {}
+                computerOsc = null;
+            }
+            if (computerContext) {
+                computerContext.close();
+                computerContext = null;
+            }
+            button.textContent = "Play on computer";
+        }
+
+        async function toggleComputerTone(button) {
+            if (computerOn) {
+                stopComputerTone(button);
+                return;
+            }
+            const beep = ui.tonemode.value === "beep";
+            computerContext = new AudioContext();
+            await computerContext.resume();
+            computerOsc = computerContext.createOscillator();
+            computerOsc.type = "sine";
+            computerOsc.frequency.value = 440;
+            const gain = computerContext.createGain();
+            gain.gain.value = 0.3;
+            computerOsc.connect(gain);
+            gain.connect(computerContext.destination);
+            computerOsc.start();
+            computerOn = true;
+            button.textContent = "Stop computer tone";
+            if (beep) {
+                computerOsc.stop(computerContext.currentTime + 0.21);
+                computerTimer = setTimeout(() => stopComputerTone(button), 220);
+            }
+        }
+
+        async function startUsbTone(beep) {
+            if (toneSinkId == null && navigator.mediaDevices && navigator.mediaDevices.selectAudioOutput)
+                toneSinkId = (await navigator.mediaDevices.selectAudioOutput()).deviceId;
+            toneContext = new AudioContext();
+            if (toneSinkId && toneContext.setSinkId)
+                await toneContext.setSinkId(toneSinkId);
+            toneOsc = toneContext.createOscillator();
+            toneOsc.type = "sine";
+            toneOsc.frequency.value = 440;
+            const gain = toneContext.createGain();
+            gain.gain.value = 0.3;
+            toneOsc.connect(gain);
+            gain.connect(toneContext.destination);
+            toneOsc.start();
+            if (beep)
+                toneOsc.stop(toneContext.currentTime + 0.21);
+        }
+
+        async function startBluetoothTone(controllers, beep) {
+            const clip = beep ? decodedToneFrames() : null;
+            toneFrameIndex = 0;
+            if (!beep) {
+                try {
+                    openToneEncoder();
+                    for (let i = 0; i < 4; i++)
+                        encodeToneFrame();
+                } catch (e) {
+                    closeToneEncoder();
+                    return false;
+                }
+                const readyAt = performance.now() + 80;
+                while (!toneQueue.length && toneOn && performance.now() < readyAt)
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                if (!toneOn || !toneQueue.length) {
+                    closeToneEncoder();
+                    return false;
+                }
+            }
+            for (const controller of controllers) {
+                controller.speakerTone_ = true;
+                toneControllers.add(controller);
+                applyOutput(controller);
+            }
+            const quietAt = performance.now() + 200;
+            while (performance.now() < quietAt && controllers.some(controller => sending.has(controller)))
+                await new Promise(resolve => setTimeout(resolve, 10));
+            for (const controller of controllers) {
+                if (sending.has(controller))
+                    continue;
+                let stalled = false;
+                try {
+                    stalled = await Promise.race([
+                        controller.sendOutputReport().then(() => false, () => false),
+                        new Promise(resolve => setTimeout(() => resolve(true), 800))
+                    ]);
+                } catch (e) {
+                    stalled = false;
+                }
+                if (stalled) {
+                    ui.tonenote.textContent = "Bluetooth write stalled. Turn the controller off and on, then connect again.";
+                    for (const stuck of controllers) {
+                        stuck.speakerTone_ = false;
+                        toneControllers.delete(stuck);
+                    }
+                    return false;
+                }
+            }
+            const period = (512 / 48000) * 1000;
+            let nextAt = performance.now();
+            let sent = 0;
+            let failed = 0;
+            const note = () => {
+                const label = beep ? "Beep" : "Playing";
+                ui.tonenote.textContent = failed
+                    ? label + " · " + sent + " sent, " + failed + " failed"
+                    : label + " · " + sent + " sent";
+            };
+            const loop = () => {
+                if (!toneOn)
+                    return;
+                const now = performance.now();
+                if (now < nextAt) {
+                    toneTimer = setTimeout(loop, nextAt - now);
+                    return;
+                }
+                if (!beep) {
+                    while (toneEncoder && toneEncoder.state === "configured" && tonePending + toneQueue.length < 4)
+                        encodeToneFrame();
+                }
+                const busy = controllers.some(controller => sending.has(controller));
+                if (!busy) {
+                    let frame = null;
+                    if (beep) {
+                        if (toneFrameIndex >= clip.length) {
+                            stopTestTone(ui.testtone);
+                            return;
+                        }
+                        frame = clip[toneFrameIndex];
+                    } else
+                        frame = toneQueue[0];
+                    if (frame) {
+                        if (beep)
+                            toneFrameIndex++;
+                        else
+                            toneQueue.shift();
+                        const headset = ui.audiopath.value === "2";
+                        let wrote = false;
+                        for (const controller of controllers) {
+                            if (!controller.device_ || !controller.device_.opened)
+                                continue;
+                            wrote = true;
+                            sending.add(controller);
+                            controller.sendSpeakerFrame(frame, headset).then(ok => {
+                                if (!toneOn)
+                                    return;
+                                if (ok)
+                                    sent++;
+                                else
+                                    failed++;
+                                note();
+                                if (failed && controller.speakerError_)
+                                    ui.tonenote.textContent += " · " + controller.speakerError_;
+                            }, () => {
+                                failed++;
+                                if (toneOn)
+                                    note();
+                            }).finally(() => {
+                                sending.delete(controller);
+                            });
+                        }
+                        if (!wrote && toneOn)
+                            ui.tonenote.textContent = "Bluetooth controller is not open";
+                    }
+                }
+                nextAt += period;
+                if (nextAt <= performance.now())
+                    nextAt = performance.now() + period;
+                toneTimer = setTimeout(loop, Math.max(0, nextAt - performance.now()));
+            };
+            note();
+            loop();
+            return true;
+        }
+
+        async function toggleTestTone(button) {
+            if (toneOn) {
+                stopTestTone(button);
+                return;
+            }
+            const open = dsHandler.controllers.filter(controller => controller.device_ && controller.device_.opened);
+            const usb = open.filter(controller => controller.connectionType_ === "usb");
+            const bluetooth = open.filter(controller => controller.connectionType_ === "bluetooth");
+            if (!usb.length && !bluetooth.length) {
+                ui.tonenote.textContent = "Connect a DualSense first";
+                return;
+            }
+            prepareToneLevels();
+            const beep = ui.tonemode.value === "beep";
+            toneOn = true;
+            button.textContent = "Stop test tone";
+            ui.tonenote.textContent = beep ? "Beep" : "Playing";
+            if (usb.length) {
+                try {
+                    await startUsbTone(beep);
+                } catch (error) {
+                    if (!bluetooth.length) {
+                        stopTestTone(button);
+                        ui.tonenote.textContent = "Could not open an audio output";
+                        return;
+                    }
+                }
+            }
+            if (bluetooth.length) {
+                const started = await startBluetoothTone(bluetooth, beep);
+                if (!started && toneOn) {
+                    if (!usb.length) {
+                        const note = ui.tonenote.textContent;
+                        stopTestTone(button);
+                        ui.tonenote.textContent = note || "Could not encode the test tone";
+                        return;
+                    }
+                    ui.tonenote.textContent = "Playing on USB";
+                }
+            } else if (beep)
+                toneTimer = setTimeout(() => stopTestTone(button), 220);
+        }
+
+        async function onFrame() {
+            window.requestAnimationFrame(onFrame);
+
+            const open = dsHandler.controllers.filter(controller => controller.device_ && controller.device_.opened);
+            if (!navigator.hid) {
+                ui.status.textContent = "WebHID is unavailable. Open this page from localhost in Chrome or Edge.";
+                return;
+            }
+            if (open.length === 0) {
+                ui.status.textContent = "No DualSense connected";
+                showDevice(null);
+                showInput(null);
+                ui.inputreport.value = "";
+                return;
+            }
+
+            const shown = activeController(open);
+            const others = open.filter(controller => controller !== shown).map(controller => controller.connectionType_);
+            ui.status.textContent = "Showing " + shown.connectionType_
+                + (others.length ? ". Also connected: " + others.join(", ") : "");
+            showDevice(shown);
+            showInput(shown);
+
+            const outputLines = await Promise.all(open.map(async controller => {
+                if (controller.connectionType_ !== "usb" && controller.connectionType_ !== "bluetooth")
+                    return controller.connectionType_ + " output report not sent";
+                if (toneControllers.has(controller))
+                    return controller.connectionType_ + " test tone";
+                if (sending.has(controller))
+                    return controller.connectionType_ + " " + (controller.outputReportHex || "");
+
+                sending.add(controller);
+                try {
+                    applyOutput(controller);
+                    const sent = await controller.sendOutputReport();
+                    if (!sent)
+                        controller.onConnectionError();
+                } finally {
+                    sending.delete(controller);
+                }
+                return controller.connectionType_ + " " + (controller.outputReportHex || "");
+            }));
+            ui.outputreport.value = outputLines.join("\n");
+        }
+
+        buildPage();
+        window.requestAnimationFrame(onFrame);
+
+        window.addEventListener("DOMContentLoaded", () => {
+            if (!navigator.hid)
+                return;
+            dsHandler.checkForGrantedDevices();
+            navigator.hid.addEventListener("connect", () => dsHandler.checkForGrantedDevices());
+            navigator.hid.addEventListener("disconnect", () => dsHandler.checkForGrantedDevices());
+        });
+    </script>
+</body>
+</html>
