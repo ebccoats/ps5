@@ -5,17 +5,86 @@ const PRODUCT_ID_DUAL_SENSE = 0x0ce6;
 const USAGE_PAGE_GENERIC_DESKTOP = 0x0001;
 const USAGE_ID_GD_GAME_PAD = 0x0005;
 
-
 // Expected report sizes, not including the report ID byte.
 const DUAL_SENSE_USB_INPUT_REPORT_0x01_SIZE = 63;
 const DUAL_SENSE_BT_INPUT_REPORT_0x01_SIZE = 9;
 const DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE = 77;
 
-const inputReportTextArea = document.getElementById('inputreport');
-const outputReportTextArea = document.getElementById('outputreport');
+const productNameText = document.getElementById('productname');
+const vidPidText = document.getElementById('vidpid');
+const connectionTypeText = document.getElementById('connectiontype');
 
+const inputReportTextArea = document.getElementById('inputreport');
+
+const buttonCrossCheckbox = document.getElementById('buttoncross');
+const buttonCircleCheckbox = document.getElementById('buttoncircle');
+const buttonSquareCheckbox = document.getElementById('buttonsquare');
+const buttonTriangleCheckbox = document.getElementById('buttontriangle');
+
+const buttonL1Checkbox = document.getElementById('buttonl1');
+const buttonR1Checkbox = document.getElementById('buttonr1');
+const buttonL2Checkbox = document.getElementById('buttonl2');
+const buttonR2Checkbox = document.getElementById('buttonr2');
 const triggerL2Text = document.getElementById('triggerl2');
 const triggerR2Text = document.getElementById('triggerr2');
+
+const buttonCreateCheckbox = document.getElementById('buttoncreate');
+const buttonOptionsCheckbox = document.getElementById('buttonoptions');
+const buttonL3Checkbox = document.getElementById('buttonl3');
+const buttonR3Checkbox = document.getElementById('buttonr3');
+
+const dpadUpCheckbox = document.getElementById('dpadup');
+const dpadDownCheckbox = document.getElementById('dpaddown');
+const dpadLeftCheckbox = document.getElementById('dpadleft');
+const dpadRightCheckbox = document.getElementById('dpadright');
+
+const buttonPSCheckbox = document.getElementById('buttonps');
+const buttonTouchpadCheckbox = document.getElementById('buttontouchpad');
+const buttonMuteCheckbox = document.getElementById('buttonmute');
+
+const leftStickXText = document.getElementById('leftstickx');
+const leftStickYText = document.getElementById('leftsticky');
+const rightStickXText = document.getElementById('rightstickx');
+const rightStickYText = document.getElementById('rightsticky');
+
+const touch0ActiveCheckbox = document.getElementById('touch0active');
+const touch0IdText = document.getElementById('touch0id');
+const touch0XText = document.getElementById('touch0x');
+const touch0YText = document.getElementById('touch0y');
+const touch1ActiveCheckbox = document.getElementById('touch1active');
+const touch1IdText = document.getElementById('touch1id');
+const touch1XText = document.getElementById('touch1x');
+const touch1YText = document.getElementById('touch1y');
+
+const gyroXText = document.getElementById('gyrox');
+const gyroYText = document.getElementById('gyroy');
+const gyroZText = document.getElementById('gyroz');
+const accelXText = document.getElementById('accelx');
+const accelYText = document.getElementById('accely');
+const accelZText = document.getElementById('accelz');
+
+const l2ForceCheckbox = document.getElementById('l2force');
+const l2StateText = document.getElementById('l2state');
+const r2ForceCheckbox = document.getElementById('r2force');
+const r2StateText = document.getElementById('r2state');
+
+const batteryChargingCheckbox = document.getElementById('batterycharging');
+const batteryFullCheckbox = document.getElementById('batteryfull');
+const batteryLevelText = document.getElementById('batterylevel');
+
+const outputReportTextArea = document.getElementById('outputreport');
+
+const lightbarRedSlider = document.getElementById('lightbarr');
+const lightbarGreenSlider = document.getElementById('lightbarg');
+const lightbarBlueSlider = document.getElementById('lightbarb');
+
+const playerLed1Checkbox = document.getElementById('playerLed1');
+const playerLed2Checkbox = document.getElementById('playerLed2');
+const playerLed3Checkbox = document.getElementById('playerLed3');
+const playerLed4Checkbox = document.getElementById('playerLed4');
+const playerLed5Checkbox = document.getElementById('playerLed5');
+const muteLedCheckbox = document.getElementById('muteLed');
+
 const l2EffectModeText = document.getElementById('l2effectmode');
 const l2EffectParam1Text = document.getElementById('l2effectparam1');
 const l2EffectParam2Text = document.getElementById('l2effectparam2');
@@ -42,16 +111,6 @@ const parseHex = value => {
     return 0;
 
   return parseInt(value, 16);
-};
-
-// Normalize a digital button value to the range [0, +1].
-const normalizeButton = value => {
-  return value ? 1.0 : 0.0;
-};
-
-// Normalize an 8-bit thumbstick axis to the range [-1, +1].
-const normalizeThumbStickAxis = value => {
-  return (2 * value / 0xFF) - 1.0;
 };
 
 // Generate CRC32 lookup table.
@@ -89,9 +148,19 @@ const fillDualSenseChecksum = (reportId, reportData) => {
   reportData[reportData.byteLength - 1] = (crc >>> 24) & 0xff;
 };
 
+// Normalize an 8-bit thumbstick axis to the range [-1, +1].
+const normalizeThumbStickAxis = value => {
+  return (2 * value / 0xFF) - 1.0;
+};
+
 // Normalize an 8-bit trigger axis to the range [0, +1].
 const normalizeTriggerAxis = value => {
   return value / 0xFF;
+};
+
+// Normalize a digital button value to the range [0, +1].
+const normalizeButton = value => {
+  return value ? 1.0 : 0.0;
 };
 
 class DualSenseHid {
@@ -165,44 +234,33 @@ class DualSenseHid {
       await device.receiveFeatureReport(0x05);
   }
 
-    setTriggerEffectParams(mode, params) {
-        this.l2EffectMode_ = mode;
-        this.l2EffectParam1_ = params.p1;
-        this.l2EffectParam2_ = params.p2;
-        this.l2EffectParam3_ = params.p3;
-        this.l2EffectParam4_ = params.p4;
-        this.l2EffectParam5_ = params.p5;
-        this.l2EffectParam6_ = params.p6;
-        this.l2EffectParam7_ = params.p7;
-        this.r2EffectMode_ = mode;
-        this.r2EffectParam1_ = params.p1;
-        this.r2EffectParam2_ = params.p2;
-        this.r2EffectParam3_ = params.p3;
-        this.r2EffectParam4_ = params.p4;
-        this.r2EffectParam5_ = params.p5;
-        this.r2EffectParam6_ = params.p6;
-        this.r2EffectParam7_ = params.p7;
-
-        l2EffectModeText.value = mode.toString(16)
-        l2EffectParam1Text.value = params.p1.toString(16)
-        l2EffectParam2Text.value = params.p2.toString(16)
-        l2EffectParam3Text.value = params.p3.toString(16)
-        l2EffectParam4Text.value = params.p4.toString(16)
-        l2EffectParam5Text.value = params.p5.toString(16)
-        l2EffectParam6Text.value = params.p6.toString(16)
-        l2EffectParam7Text.value = params.p7.toString(16)
-        r2EffectModeText.value = mode.toString(16)
-        r2EffectParam1Text.value = params.p1.toString(16)
-        r2EffectParam2Text.value = params.p2.toString(16)
-        r2EffectParam3Text.value = params.p3.toString(16)
-        r2EffectParam4Text.value = params.p4.toString(16)
-        r2EffectParam5Text.value = params.p5.toString(16)
-        r2EffectParam6Text.value = params.p6.toString(16)
-        r2EffectParam7Text.value = params.p7.toString(16)
-    }
-
   initializeUI() {
-      pageSetup()
+    const onPlayerLedsChanged = e => {
+      this.checkboxPlayerLeds_ = (playerLed1Checkbox.checked ? 0x01 : 0x00)
+          | (playerLed2Checkbox.checked ? 0x02 : 0x00)
+          | (playerLed3Checkbox.checked ? 0x04 : 0x00)
+          | (playerLed4Checkbox.checked ? 0x08 : 0x00)
+          | (playerLed5Checkbox.checked ? 0x10 : 0x00);
+    };
+    playerLed1Checkbox.onchange = onPlayerLedsChanged;
+    playerLed2Checkbox.onchange = onPlayerLedsChanged;
+    playerLed3Checkbox.onchange = onPlayerLedsChanged;
+    playerLed4Checkbox.onchange = onPlayerLedsChanged;
+    playerLed5Checkbox.onchange = onPlayerLedsChanged;
+
+    const onMuteLedChanged = e => {
+      this.muteLed_ = muteLedCheckbox.checked ? 0x01 : 0x00;
+    };
+    muteLedCheckbox.onchange = onMuteLedChanged;
+
+    const onLightbarColorChanged = e => {
+      this.sliderLightbarRed_ = lightbarRedSlider.value;
+      this.sliderLightbarGreen_ = lightbarGreenSlider.value;
+      this.sliderLightbarBlue_ = lightbarBlueSlider.value;
+    }
+    lightbarRedSlider.oninput = onLightbarColorChanged;
+    lightbarGreenSlider.oninput = onLightbarColorChanged;
+    lightbarBlueSlider.oninput = onLightbarColorChanged;
 
     const onTriggerEffectChanged = e => {
       this.l2EffectMode_ = parseHex(l2EffectModeText.value);
@@ -241,6 +299,11 @@ class DualSenseHid {
   }
 
   onConnectionError() {
+    productNameText.value = '';
+    vidPidText.value = '';
+    connectionTypeText.value = '';
+    inputReportTextArea.value = '';
+    outputReportTextArea.value = '';
     delete window.dshid;
   }
 
@@ -351,9 +414,59 @@ class DualSenseHid {
     let batteryFull = !!(battery0 & 0x20);
 		let batteryCharging = !!(battery1 & 0x08);
 
+    buttonCrossCheckbox.checked = cross;
+		buttonCircleCheckbox.checked = circle;
+		buttonSquareCheckbox.checked = square;
+		buttonTriangleCheckbox.checked = triangle;
+    buttonL1Checkbox.checked = l1;
+    buttonR1Checkbox.checked = r1;
+    buttonL2Checkbox.checked = l2;
+    buttonR2Checkbox.checked = r2;
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
-   
+    buttonCreateCheckbox.checked = create;
+    buttonOptionsCheckbox.checked = options;
+    buttonL3Checkbox.checked = l3;
+    buttonR3Checkbox.checked = r3;
+    
+    dpadUpCheckbox.checked = up;
+    dpadDownCheckbox.checked = down;
+    dpadLeftCheckbox.checked = left;
+    dpadRightCheckbox.checked = right;
+    
+    buttonPSCheckbox.checked = ps;
+    buttonTouchpadCheckbox.checked = touchpad;
+    buttonMuteCheckbox.checked = mute;
+
+    leftStickXText.value = Number(lsx).toFixed(2);
+    leftStickYText.value = Number(lsy).toFixed(2);
+    rightStickXText.value = Number(rsx).toFixed(2);
+    rightStickYText.value = Number(rsy).toFixed(2);
+
+		touch0ActiveCheckbox.checked = touch0active;
+		touch0IdText.value = touch0id;
+		touch0XText.value = touch0x;
+		touch0YText.value = touch0y;
+		touch1ActiveCheckbox.checked = touch1active;
+		touch1IdText.value = touch1id;
+		touch1XText.value = touch1x;
+		touch1YText.value = touch1y;
+
+    gyroXText.value = gyrox;
+    gyroYText.value = gyroy;
+    gyroZText.value = gyroz;
+    accelXText.value = accelx;
+    accelYText.value = accely;
+    accelZText.value = accelz;
+
+    l2ForceCheckbox.checked = l2feedback & 0x10;
+    l2StateText.value = l2feedback & 0x0F;
+    r2ForceCheckbox.checked = r2feedback & 0x10;
+    r2StateText.value = r2feedback & 0x0F;
+
+    batteryChargingCheckbox.checked = batteryCharging;
+    batteryFullCheckbox.checked = batteryFull;
+    batteryLevelText.value = batteryLevelPercent + '%';
   }
   
   handleBluetoothInputReport01(report) {
@@ -397,11 +510,49 @@ class DualSenseHid {
     let ps = normalizeButton(buttons2 & 0x01);
     let touchpad = normalizeButton(buttons2 & 0x02);
 
+    buttonCrossCheckbox.checked = cross;
+		buttonCircleCheckbox.checked = circle;
+		buttonSquareCheckbox.checked = square;
+		buttonTriangleCheckbox.checked = triangle;
+    buttonL1Checkbox.checked = l1;
+    buttonR1Checkbox.checked = r1;
+    buttonL2Checkbox.checked = l2;
+    buttonR2Checkbox.checked = r2;
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
+    buttonCreateCheckbox.checked = create;
+    buttonOptionsCheckbox.checked = options;
+    buttonL3Checkbox.checked = l3;
+    buttonR3Checkbox.checked = r3;
+    
+    dpadUpCheckbox.checked = up;
+    dpadDownCheckbox.checked = down;
+    dpadLeftCheckbox.checked = left;
+    dpadRightCheckbox.checked = right;
+    
+    buttonPSCheckbox.checked = ps;
+    buttonTouchpadCheckbox.checked = touchpad;
+    buttonMuteCheckbox.checked = false;
+
+    leftStickXText.value = Number(lsx).toFixed(2);
+    leftStickYText.value = Number(lsy).toFixed(2);
+    rightStickXText.value = Number(rsx).toFixed(2);
+    rightStickYText.value = Number(rsy).toFixed(2);
+
+		touch0ActiveCheckbox.checked = false;
+		touch0IdText.value = 'N/A';
+		touch0XText.value = '';
+		touch0YText.value = '';
+		touch1ActiveCheckbox.checked = false;
+		touch1IdText.value = 'N/A';
+		touch1XText.value = '';
+		touch1YText.value = '';
+
+    batteryChargingCheckbox.checked = false;
+    batteryFullCheckbox.checked = false;
+    batteryLevelText.value = 'N/A';
   }
   
-
   handleBluetoothInputReport31(report) {
     if (report.byteLength != DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE)
     	return;
@@ -414,10 +565,7 @@ class DualSenseHid {
     let axes4 = report.getUint8(5);
     let axes5 = report.getUint8(6);
     // byte 7?
-    let buttons0 = report.getUint8(8); 
-    let cross = normalizeButton(buttons0 & 0x20);
-    crossPressed = cross;
-
+    let buttons0 = report.getUint8(8);
     let buttons1 = report.getUint8(9);
     let buttons2 = report.getUint8(10);
     // byte 11?
@@ -454,7 +602,6 @@ class DualSenseHid {
     let battery1 = report.getUint8(54);
     // bytes 55-76?
 
-
     let lsx = normalizeThumbStickAxis(axes0);
 		let lsy = normalizeThumbStickAxis(axes1);
 		let rsx = normalizeThumbStickAxis(axes2);
@@ -462,6 +609,35 @@ class DualSenseHid {
     let l2axis = normalizeTriggerAxis(axes4);
     let r2axis = normalizeTriggerAxis(axes5);
 
+    let dpad = buttons0 & 0x0f;
+		let up = normalizeButton(dpad == 0 || dpad == 1 || dpad == 7);
+		let down = normalizeButton(dpad == 3 || dpad == 4 || dpad == 5);
+		let left = normalizeButton(dpad == 5 || dpad == 6 || dpad == 7);
+		let right = normalizeButton(dpad == 1 || dpad == 2 || dpad == 3);
+    let square = normalizeButton(buttons0 & 0x10);
+    let cross = normalizeButton(buttons0 & 0x20);
+    let circle = normalizeButton(buttons0 & 0x40);
+    let triangle = normalizeButton(buttons0 & 0x80);
+    let l1 = normalizeButton(buttons1 & 0x01);
+    let r1 = normalizeButton(buttons1 & 0x02);
+    let l2 = normalizeButton(buttons1 & 0x04);
+    let r2 = normalizeButton(buttons1 & 0x08);
+    let create = normalizeButton(buttons1 & 0x10);
+    let options = normalizeButton(buttons1 & 0x20);
+    let l3 = normalizeButton(buttons1 & 0x40);
+    let r3 = normalizeButton(buttons1 & 0x80);
+    let ps = normalizeButton(buttons2 & 0x01);
+    let touchpad = normalizeButton(buttons2 & 0x02);
+    let mute = normalizeButton(buttons2 & 0x04);
+    
+    let touch0active = !(touch00 & 0x80);
+    let touch0id = (touch00 & 0x7F);
+    let touch0x = ((touch02 & 0x0F) << 8) | touch01;
+    let touch0y = (touch03 << 4) | ((touch02 & 0xF0) >> 4);
+    let touch1active = !(touch10 & 0x80);
+    let touch1id = (touch10 & 0x7F);
+    let touch1x = ((touch12 & 0x0F) << 8) | touch11;
+    let touch1y = (touch13 << 4) | ((touch12 & 0xF0) >> 4);
 
     let gyrox = (gyroX1 << 8) | gyroX0;
     if (gyrox > 0x7FFF) gyrox -= 0x10000;
@@ -480,12 +656,59 @@ class DualSenseHid {
     let batteryFull = !!(battery0 & 0x20);
 		let batteryCharging = !!(battery1 & 0x08);
 
-    rightJoyStick.update(rsx, rsy)
-
-
+    buttonCrossCheckbox.checked = cross;
+		buttonCircleCheckbox.checked = circle;
+		buttonSquareCheckbox.checked = square;
+		buttonTriangleCheckbox.checked = triangle;
+    buttonL1Checkbox.checked = l1;
+    buttonR1Checkbox.checked = r1;
+    buttonL2Checkbox.checked = l2;
+    buttonR2Checkbox.checked = r2;
     triggerL2Text.value = Math.round(l2axis * 100) + '%';
     triggerR2Text.value = Math.round(r2axis * 100) + '%';
+    buttonCreateCheckbox.checked = create;
+    buttonOptionsCheckbox.checked = options;
+    buttonL3Checkbox.checked = l3;
+    buttonR3Checkbox.checked = r3;
+    
+    dpadUpCheckbox.checked = up;
+    dpadDownCheckbox.checked = down;
+    dpadLeftCheckbox.checked = left;
+    dpadRightCheckbox.checked = right;
+    
+    buttonPSCheckbox.checked = ps;
+    buttonTouchpadCheckbox.checked = touchpad;
+    buttonMuteCheckbox.checked = mute;
 
+    leftStickXText.value = Number(lsx).toFixed(2);
+    leftStickYText.value = Number(lsy).toFixed(2);
+    rightStickXText.value = Number(rsx).toFixed(2);
+    rightStickYText.value = Number(rsy).toFixed(2);
+
+		touch0ActiveCheckbox.checked = touch0active;
+		touch0IdText.value = touch0id;
+		touch0XText.value = touch0x;
+		touch0YText.value = touch0y;
+		touch1ActiveCheckbox.checked = touch1active;
+		touch1IdText.value = touch1id;
+		touch1XText.value = touch1x;
+		touch1YText.value = touch1y;
+
+    gyroXText.value = gyrox;
+    gyroYText.value = gyroy;
+    gyroZText.value = gyroz;
+    accelXText.value = accelx;
+    accelYText.value = accely;
+    accelZText.value = accelz;
+
+    l2ForceCheckbox.checked = l2feedback & 0x10;
+    l2StateText.value = l2feedback & 0x0F;
+    r2ForceCheckbox.checked = r2feedback & 0x10;
+    r2StateText.value = r2feedback & 0x0F;
+
+    batteryChargingCheckbox.checked = batteryCharging;
+    batteryFullCheckbox.checked = batteryFull;
+    batteryLevelText.value = batteryLevelPercent + '%';
   }
 
   onInputReport(event) {
@@ -497,6 +720,9 @@ class DualSenseHid {
 
 		inputReportTextArea.value = reportString;
     
+    productNameText.value = event.device.productName;
+    vidPidText.value = hex16(event.device.vendorId) + ':' + hex16(event.device.productId);
+    connectionTypeText.value = this.connectionType_;
 
 		if (this.connectionType_ == 'usb') {
       if (reportId == 0x01)
@@ -806,440 +1032,3 @@ window.addEventListener('DOMContentLoaded', async e => {
   navigator.hid.onconnect = checkForGrantedDevices;
   navigator.hid.ondisconnect = checkForGrantedDevices;
 });
-// This is the stuff I added:
-
-const radioButtons = document.getElementsByName('triggerMode')
-
-function setTriggerMode(label) {
-    let newTrigger = returnSettings(label)
-
-    triggerMode = label
-    
-    if (window.dshid) {
-        window.dshid.setTriggerEffectParams(newTrigger.mode, newTrigger.params)
-    }
-    console.log("New Trigger", newTrigger)
-}
-class TriggerSettings {
-    label = "none"
-    mask = 0x00
-    mode = 0x00
-    params            
-    constructor(label, mask, mode) {
-        this.label = label
-        this.mask = mask
-        this.mode = mode
-        this.params = new TriggerParams()
-    }
-
-    set(params) {
-        this.params = params
-    }
-
-}
-
-class TriggerParams {
-    p1 = 0x00
-    p2 = 0x00
-    p3 = 0x00
-    p4 = 0x00
-    p5 = 0x00
-    p6 = 0x00
-    p7 = 0x00
-}
-
-    
-function returnSettings(label) {
-    let settings 
-    let params = new TriggerParams()
-
-    console.log(label)
-    switch(label) {
-        case "linear": // continuous resistance
-            settings = new TriggerSettings("linear", 0x00, 0x21)
-            params = new TriggerParams()
-
-            params.p1 = 0xff // start position
-            params.p2 = 0xff // force/strength
-
-            settings.set(params)
-
-            console.log("linear")
-            return settings
-
-        case "linearTough": // continuous resistance
-            settings = new TriggerSettings("linearTough", 0x00, 0x21)
-            params = new TriggerParams()
-
-            params.p1 = 0xff // start position
-            params.p2 = 0xff // force/strength
-            params.p3 = 0xff
-            params.p4 = 0xff
-            params.p5 = 0xff
-            params.p6 = 0xff
-            params.p7 = 0xff
-
-            settings.set(params)
-
-            console.log("linearTough")
-            return settings
-
-            break
-        case "nonlinear": // weapon with trigger at 255
-            settings = new TriggerSettings("nonlinear", 0x00, 0x22)
-            params = new TriggerParams()
-
-            params.p1 = 0xF5 // start position
-            params.p2 = 0xd0 // end position (trigger tripped)
-            params.p3 = 0x30 // backlash?
-            params.p4 = 0xff // snap force (right at release threshold, JUST before the end) 
-
-
-            settings.set(params)
-
-            return settings
-
-            break
-
-        case "threshold": // trigger
-            settings = new TriggerSettings("threshold", 0x00, 0x25)
-            params = new TriggerParams()
-
-            params.p1 = 0x90 // start position (can't go below 0x50)
-            params.p2 = 0xA0 // end position (trigger tripped)
-            params.p3 = 0xff // max force
-
-            settings.set(params)
-
-            return settings
-
-            break
-        case "bowThreshold":
-            settings = new TriggerSettings("bowThreshold", 0x00, 0x22)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF
-            params.p2 = 0x30
-            params.p3 = 0xFF
-            params.p4 = 0x30 
-
-            settings.set(params)
-
-            return settings
-
-            break
-        case "vibration":
-            settings = new TriggerSettings("vibration", 0x00, 0x06)
-            params = new TriggerParams()
-
-            params.p1 = 0x50 // cadence
-            params.p2 = 0x01// depth it will release from (if you are riding the trigger)
-            params.p3 = 0x10 // depth the vibration triggers at (% of trigger pull)
-
-
-            settings.set(params)
-
-            return settings
-
-        case "heartbeat":
-            settings = new TriggerSettings("heartbeat", 0x00, 0x06)
-            params = new TriggerParams()
-
-            params.p1 = 0x01 // cadence
-            params.p2 = 0x10 // depth it will release to
-            params.p3 = 0x01 // depth the vibration triggers at (% of trigger pull)
-
-
-            settings.set(params)
-
-            return settings
-
-        case "mosquito":
-            settings = new TriggerSettings("mosquito", 0x00, 0x06)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF // cadence
-            params.p2 = 0x10 // depth it will release to 
-            params.p3 = 0x01 // depth the vibration triggers at (% of trigger pull)
-
-
-            settings.set(params)
-
-            return settings
-
-
-            break
-        case "sineRhythm":
-            settings = new TriggerSettings("sineRhythm", 0x00, 0x23)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF 
-            params.p2 = 0xFF // threshold release depth (ff = no threshold)
-            params.p3 = 0x01 // pattern; nothing at 08 or 09 but 01-0F has patterns
-            params.p4 = 0x02 // frequency/speed?
-            params.p5 = 0x01 
-            params.p6 = 0x01 
-
-            settings.set(params)
-
-            return settings
-        
-        case "fastSineRhythm":
-            settings = new TriggerSettings("fastSineRhythm", 0x00, 0x23)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF 
-            params.p2 = 0xFF // threshold release depth (ff = no threshold)
-            params.p3 = 0x01 // pattern; nothing at 08 or 09 but 01-0F has patterns
-            params.p4 = 0x05 // frequency/speed?
-            params.p5 = 0x01 
-            params.p6 = 0x01 
-
-            settings.set(params)
-
-            return settings
-        case "brightLight":
-            settings = new TriggerSettings("brightLight", 0x00, 0x23)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF 
-            params.p2 = 0x01 // threshold release depth (ff = no threshold)
-
-            params.p3 = 0x02 // pattern; nothing at 08 or 09 but 01-0F has patterns
-            params.p4 = 0x60 // frequency? 
-            params.p5 = 0x01 
-            params.p6 = 0x01 
-
-            settings.set(params)
-
-            return settings
-
-        case "helicopter":
-            settings = new TriggerSettings("helicopter", 0x00, 0x23)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF 
-            params.p2 = 0x01 // threshold release depth (ff = no threshold)
-
-            params.p3 = 0x02 // pattern; nothing at 08 or 09 but 01-0F has patterns
-            params.p4 = 0x10 // frequency/speed
-            params.p5 = 0x01 
-            params.p6 = 0x01 
-
-            settings.set(params)
-
-            return settings
-
-
-            break
-        case "squareRhythm":
-            settings = new TriggerSettings("squareRhythm", 0x00, 0x27)
-            params = new TriggerParams()
-
-            params.p1 = 0x10 
-            params.p2 = 0xFF 
-            params.p3 = 0x03 // pattern; 03 rises and fades, f0 does the same, ff is loud and consistent, not sure about the rest. 07 starts super strong. These are easier to feel when the speed is higher. I think you can probably combine these in sequences based on how they start.
-            params.p4 = 0x10 // frequency/speed 
-            params.p5 = 0x3F
-            params.p6 = 0xDF
-
-            settings.set(params)
-
-            return settings
-            
-        case "fadingbuzz":
-            settings = new TriggerSettings("fadingbuzz", 0x00, 0x27)
-            params = new TriggerParams()
-
-            params.p1 = 0x10 
-            params.p2 = 0xFF 
-            params.p3 = 0x03 // pattern; 03 rises and fades, f0 does the same, ff is loud and consistent, not sure about the rest 
-            params.p4 = 0x30 //  
-            params.p5 = 0x3F
-            params.p6 = 0xDF
-
-            settings.set(params)
-
-            return settings
-
-
-            break
-        case "none":
-            settings = new TriggerSettings("none", 0x00, 0x00)
-            params = new TriggerParams()
-
-            settings.set(params)
-
-            return settings
-
-        case "limp":
-            settings = new TriggerSettings("limp", 0x00, 0x05)
-            params = new TriggerParams()
-
-            settings.set(params)
-
-            return settings
-
-        case "rock":
-            settings = new TriggerSettings("rock", 0x00, 0x06)
-            params = new TriggerParams()
-
-            params.p1 = 0x10 // cadence
-            params.p2 = 0x01// depth it will release from (if you are riding the trigger)
-            params.p3 = 0x10 // depth the vibration triggers at (% of trigger pull)
-
-
-            settings.set(params)
-
-            return settings
-
-        case "moth":
-            settings = new TriggerSettings("moth", 0x00, 0x06)
-            params = new TriggerParams()
-
-            params.p1 = 0xFF // cadence
-            params.p2 = 0x10 // depth it will release to 
-            params.p3 = 0x01 // depth the vibration triggers at (% of trigger pull)
-
-
-            settings.set(params)
-
-            return settings
-
-        case "air":
-            settings = new TriggerSettings("air", 0x00, 0x05)
-            params = new TriggerParams()
-
-            settings.set(params)
-
-            return settings
-
-            break
-    }
-}
-
-
-class RightJoyStick {
-
-  constructor() {
-  }
-
-  update(x,y) {
-    self.x = x
-    self.y = y
-    // console.log(`Updated to x=${x}, y=${y}`)
-  }
-
-  // hasTriggered is True if the joystick is not near neutral position
-  hasTriggered() {
-    let hasTriggered = (self.x > 0.04 || self.x < -0.04 || self.y > 0.04 || self.y < -0.04  )
-    // console.log(`Has Triggered ${hasTriggered}`)
-    return hasTriggered
-  }
-
-  getRoundedPositions() {
-    return [Math.round(self.x), Math.round(self.y)]
-  }
-
-}
-
-class Player {
-
-  constructor() {
-    self.x = 0
-    self.y = 1
-  }
-
-  update_location(x,y) {
-    self.x = x
-    self.y = y
-  }
-
-  get_location() {
-    return [self.x, self.y]
-  }
-}
-
-
-// Gallop game BOOKMARK
-let vibrationTime = 0;
-let triggerMode = "none";
-let rightJoyStick = new RightJoyStick();
-let player = new Player();
-let crossPressed = 0;
-let rs_x = 0
-let rs_y = 0
-let gameboard = [
-    ["air", "rock"],
-    ["air", "air"],
-    ["air", "moth"]
-]
-
-// map this to the tile coordinates for bat game
-// let rightJoystick = {
-//     x: 0,
-//     y: 0
-// }
-
-
-
-
-function gameLoop() {
-  // increment vibration timer
-  vibrationTime++
-
-    // process right joystick
-    // TODO create joystick class
-    if (rightJoyStick.hasTriggered()) {
-      let [x,y] = rightJoyStick.getRoundedPositions()
-      console.log("Joystick Position:", x,y)
-      player.update_location(x,y)
-    } 
-
-    console.log(`Player Location: ${player.get_location()}`)
-
-  if (crossPressed == 1) {
-    setTriggerMode("none")
-  } else {
-    // call updateVibration
-      // something wrong here 
-      if (player.get_location()[0] == 1) {
-        setTriggerMode("rock")
-      }
-      else if (player.get_location()[1] == 1) {
-        setTriggerMode("moth")
-      }
-      else {
-        setTriggerMode("air")
-      }
-      
-  }
-
-
-
-
-  window.requestAnimationFrame(gameLoop);
-}
-
-// function gameLoop() {
-  // // increment vibration timer
-  // vibrationTime++
-  // // call updateVibration
-  // if (vibrationTime > 2000) { // more than 3 seconds
-  //   setTriggerMode("fastSineRhythm")
-  //   vibrationTime = 0
-  // }
-//   // do a timeout to call itself again
-//   setInterval(gameLoop, 1000)
-// }
-
-function pageSetup() {
-    console.log("pageSetup")
-    setTriggerMode("air")
-
-    window.requestAnimationFrame(gameLoop);
-    // gameLoop()
-    // // delay(3000)
-    // setTriggerMode("fastSineRhythm")
-}
-

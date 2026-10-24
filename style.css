@@ -1,4 +1,20 @@
+:root { color-scheme: dark; }
+body { background: #000; color: #fff; margin: 16px; font-family: sans-serif; }
+
 #status {
-    font-size: large;
+    text-align: center;
+}
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px dashed #fff;
+    padding: 15px;
+
+    height: 50px;
+    width: 50px;
+
     text-align: center;
 }

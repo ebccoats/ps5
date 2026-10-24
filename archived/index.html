@@ -1,24 +1,34 @@
 <html>
     <head>
-        <link rel="stylesheet" href="style.css">
-
-        
     </head>
 
     <body>
-        <div id="status">
-            Galloping...
-        </div>
-
-
         <button type="button" onclick="requestDevice()">Connect DualSense</button>
-        
         <div>
             <input type="text" id="triggerl2" style="text-align:right; width:50;" disabled />L2 trigger state<br />
             <input type="text" id="triggerr2" style="text-align:right; width:50;" disabled />R2 trigger state<br />
         </div>
 
-                
+        <div>
+            <fieldset>
+                <label><input type="radio" name="triggerMode" value="linear">Linear resistance</label>
+                <label><input type="radio" name="triggerMode" value="linearTough">Linear tougher resistance</label>
+                <label><input type="radio" name="triggerMode" value="nonlinear">Nonlinear resistance</label>  
+                <label><input type="radio" name="triggerMode" value="threshold">Weapon/linear threshold</label>
+                <label><input type="radio" name="triggerMode" value="bowThreshold">Bow/nonlinear threshold</label>  
+                <label><input type="radio" name="triggerMode" value="vibration">Vibration</label>  
+                <label><input type="radio" name="triggerMode" value="heartbeat">Heartbeat</label>  
+                <label><input type="radio" name="triggerMode" value="mosquito">Mosquito</label>  
+                <label><input type="radio" name="triggerMode" value="sineRhythm">Gallop/Sine wave pattern</label>  
+                <label><input type="radio" name="triggerMode" value="brightLight">Bright light?</label>  
+                <label><input type="radio" name="triggerMode" value="helicopter">Riding in a helicopter</label>  
+                <label><input type="radio" name="triggerMode" value="squareRhythm">Machine/Square wave pattern</label>  
+                <label><input type="radio" name="triggerMode" value="fadingbuzz">Fading buzz</label>  
+                <label><input type="radio" name="triggerMode" value="none" checked>Reset after next pull</label>  
+                <label><input type="radio" name="triggerMode" value="limp" checked>Full zero</label>  
+            </fieldset>
+        </div>
+
         <input type="text" id="l2effectmode" style="text-align:right; width:50;" value="26" />L2 trigger effect mode<br />
         <input type="text" id="l2effectparam1" style="text-align:right; width:50;" value="90" />L2 trigger effect parameter 1<br />
         <input type="text" id="l2effectparam2" style="text-align:right; width:50;" value="A0" />L2 trigger effect parameter 2<br />
@@ -42,7 +52,7 @@
         <h3>Output report</h3>
         <textarea id="outputreport" cols="48" rows="6" disabled></textarea><br>
     </body>
-            
-    <script src ="gallopGame.js"></script>
+    
+    <script src ="index.js"></script>
 
 </html>
