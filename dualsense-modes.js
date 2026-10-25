@@ -3,8 +3,8 @@
 // -----------------------------------------------------------------
 
 class HapticsMode {
-    static DEFAULT_MODE = "05"; 
-    static DEFAULT_PARAMS = ["00", "00", "00", "00", "00", "00", "00"];
+    static DEFAULT_MODE = "23"; 
+    static DEFAULT_PARAMS = ["ff", "ff", "01", "02", "01", "01", "00"];
     static DEFAULT_RUMBLE = [0, 0];
 
     constructor({ name = "", label = "", mode, params, rumble, audio = null } = {}) {
@@ -19,17 +19,15 @@ class HapticsMode {
 
 const TRIGGER_MODES = [
     new HapticsMode({ 
-        name: "rock", label: "Mosquito", 
-        mode: "06", params: ["ff", "10", "01", "00", "00", "00", "00"], 
+        name: "rock", label: "Deep rumble", 
         rumble: [50, 0], 
         audio: "<lt, mt>"}),
     new HapticsMode({ 
-        name: "flying", label: "Gallop/Sine wave pattern", 
-        mode: "23", params: ["ff", "ff", "01", "02", "01", "01", "00"]}),
-    new HapticsMode({ 
-        name: "bug", label: "Gallop/Sine wave pattern", 
+        name: "bug", label: "Light rumble", 
         rumble: [0, 100], 
-        audio: "<hh>*16"}),
+        audio: "<hh hh ->*16"}),
+    new HapticsMode({ 
+        name: "air", label: "Gallop"}),
     new HapticsMode({ 
         name: "none", label: "Full zero", 
         mode: "05", params: ["00", "00", "00", "00", "00", "00", "00"] })

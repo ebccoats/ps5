@@ -3,9 +3,9 @@ class Board {
     
     constructor() {
         self.brd =  [
-            ["rock", "none", "rock"],
-            ["rock", "none", "none"],
-            ["rock", "none", "bug"]
+            ["rock", "air", "rock"],
+            ["rock", "air", "air"],
+            ["rock", "air", "bug"]
         ]
 
     }
