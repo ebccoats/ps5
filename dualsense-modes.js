@@ -1,10 +1,25 @@
 // -----------------------------------------------------------------
 // List of haptic modes for the DualSense controller
 // -----------------------------------------------------------------
+
+class HapticsMode {
+    static DEFAULT_MODE = "05"; 
+    static DEFAULT_PARAMS = ["00", "00", "00", "00", "00", "00", "00"];
+    static DEFAULT_RUMBLE = [0, 0];
+
+    constructor({ name = "", label = "", mode, params, rumble } = {}) {
+        this.name = name;
+        this.label = label;
+        this.mode = mode || HapticsMode.DEFAULT_MODE;
+        this.params = params?.length ? [...params] : [...HapticsMode.DEFAULT_PARAMS];
+        this.rumble = rumble?.length ? [...rumble] : [...HapticsMode.DEFAULT_RUMBLE];
+    }
+}
+
 const TRIGGER_MODES = [
-    { name: "rock", label: "Mosquito", mode: "06", params: ["ff", "10", "01", "00", "00", "00", "00"] },
-    { name: "bug", label: "Gallop/Sine wave pattern", mode: "23", params: ["ff", "ff", "01", "02", "01", "01", "00"] },
-    { name: "none", label: "Full zero", mode: "05", params: ["00", "00", "00", "00", "00", "00", "00"] }
+    new HapticsMode({ name: "rock", label: "Mosquito", mode: "06", params: ["ff", "10", "01", "00", "00", "00", "00"], rumble: [50, 0] }),
+    new HapticsMode({ name: "bug", label: "Gallop/Sine wave pattern", mode: "23", params: ["ff", "ff", "01", "02", "01", "01", "00"], rumble: [0, 50] }),
+    new HapticsMode({ name: "none", label: "Full zero", mode: "05", params: ["00", "00", "00", "00", "00", "00", "00"] })
 ];
 
 // -----------------------------------------------------------------
@@ -27,6 +42,9 @@ function updateActiveControllers(mode) {
         SENDING.add(controller);
         controller.changeTriggerEffect("left", { mode: mode.mode }, ...mode.params);
         controller.changeTriggerEffect("right", { mode: mode.mode }, ...mode.params);
+
+        controller.changeRumble(mode.rumble[0], mode.rumble[1])
+
         controller.sendOutputReport().finally(() => SENDING.delete(controller));
     }
 }
