@@ -24,8 +24,9 @@ window.requestAnimationFrame(gameLoop);
 async function gameLoop() {
     window.requestAnimationFrame(gameLoop);
 
-    if (!controllerHandler.controllers.length) {
-        controllerHandler.checkForGrantedDevices()
+    if (!controllerHandler.checkingForDevicesInProgress) {
+        try {controllerHandler.checkForGrantedDevices()}
+        catch {} // Ignore if already check in progress
         return
     }
     

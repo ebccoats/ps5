@@ -72,6 +72,8 @@ class GameControllerWebHandler {
     }
 
     checkForGrantedDevices = async () => {
+        this.checkingForDevicesInProgress = true
+
         if (window.dshid !== undefined && !window.dshid.device_.opened) {
             console.log('DualSense disconnected');
             window.dshid.onConnectionError();
@@ -100,6 +102,7 @@ class GameControllerWebHandler {
             }
         }
         console.log('No DualSense found');
+        this.checkingForDevicesInProgress = false
     };
 
 }
