@@ -7,19 +7,32 @@ class HapticsMode {
     static DEFAULT_PARAMS = ["00", "00", "00", "00", "00", "00", "00"];
     static DEFAULT_RUMBLE = [0, 0];
 
-    constructor({ name = "", label = "", mode, params, rumble } = {}) {
+    constructor({ name = "", label = "", mode, params, rumble, audio = null } = {}) {
         this.name = name;
         this.label = label;
         this.mode = mode || HapticsMode.DEFAULT_MODE;
         this.params = params?.length ? [...params] : [...HapticsMode.DEFAULT_PARAMS];
         this.rumble = rumble?.length ? [...rumble] : [...HapticsMode.DEFAULT_RUMBLE];
+        this.audio  = audio
     }
 }
 
 const TRIGGER_MODES = [
-    new HapticsMode({ name: "rock", label: "Mosquito", mode: "06", params: ["ff", "10", "01", "00", "00", "00", "00"], rumble: [50, 0] }),
-    new HapticsMode({ name: "bug", label: "Gallop/Sine wave pattern", mode: "23", params: ["ff", "ff", "01", "02", "01", "01", "00"], rumble: [0, 50] }),
-    new HapticsMode({ name: "none", label: "Full zero", mode: "05", params: ["00", "00", "00", "00", "00", "00", "00"] })
+    new HapticsMode({ 
+        name: "rock", label: "Mosquito", 
+        mode: "06", params: ["ff", "10", "01", "00", "00", "00", "00"], 
+        rumble: [50, 0], 
+        audio: "<lt, mt>"}),
+    new HapticsMode({ 
+        name: "flying", label: "Gallop/Sine wave pattern", 
+        mode: "23", params: ["ff", "ff", "01", "02", "01", "01", "00"]}),
+    new HapticsMode({ 
+        name: "bug", label: "Gallop/Sine wave pattern", 
+        rumble: [0, 100], 
+        audio: "<hh>*16"}),
+    new HapticsMode({ 
+        name: "none", label: "Full zero", 
+        mode: "05", params: ["00", "00", "00", "00", "00", "00", "00"] })
 ];
 
 // -----------------------------------------------------------------
@@ -50,13 +63,39 @@ function updateActiveControllers(mode) {
 }
 
 // -----------------------------------------------------------------
+// Switch to a different audio sample based on the mode name
+// -----------------------------------------------------------------
+
+var AUDIO_PLAYING = false
+
+function turnOffAudio() {
+    AUDIO_PLAYING = false
+    hush()
+}
+
+function switchAudio(mode) {
+    if (mode.audio && !AUDIO_PLAYING) {
+        AUDIO_PLAYING = true
+        console.log("mode audio")
+        sound(mode.audio).play()
+        setTimeout(turnOffAudio, 1000)
+    }
+}
+
+// -----------------------------------------------------------------
 // Switch to a different haptic mode based on the provided mode name
 // -----------------------------------------------------------------
 function switchMode(modeName) {
+
     const mode = TRIGGER_MODES.find(mode => mode.name === modeName);
     if (!mode) {
-        console.error("Invalid mode name");
+        console.error("Invalid mode name: ", mode);
         return;
     }
+    
+    switchAudio(mode)
+
     updateActiveControllers(mode);
+
+    
 }

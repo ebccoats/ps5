@@ -15,6 +15,16 @@ board.render()
 const player = new Player()
 player.renderOn(board)
 
+// ---------------------------------------------------------------------------------
+// Initialize audio sounds
+// ---------------------------------------------------------------------------------
+initStrudel({
+  prebake: () => {
+    samples("github:tidalcycles/dirt-samples") // bd, sd, etc. (drums)
+    samples("https://strudel.b-cdn.net/piano.json") // piano
+  }
+});
+
 // ---------------------------------------------------------------------------------------------
 // Start the game loop to continuously check for controller input and update the game state
 // Check where the camera (right joy stick) is pointing, and update haptics accordingly
