@@ -24,6 +24,11 @@ window.requestAnimationFrame(gameLoop);
 async function gameLoop() {
     window.requestAnimationFrame(gameLoop);
 
+    if (!controllerHandler.controllers.length) {
+        controllerHandler.checkForGrantedDevices()
+        return
+    }
+    
     const open_controllers = controllerHandler.controllers.filter(controller => controller.device_ && controller.device_.opened);
     connectionStatus.textContent = open_controllers.length ? "DualSense connected.  You're ready to play!" : "No DualSense connected...please press the PS button on your controller to connect.";
 
