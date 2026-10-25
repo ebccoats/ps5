@@ -82,7 +82,7 @@ class GameControllerWebHandler {
         if (window.dshid !== undefined)
             return;
 
-        console.log('Checking for a connected DualSense');
+        // console.log('Checking for a connected DualSense');
         // Check if we already have permissions for a DualSense device.
         const devices = await navigator.hid.getDevices();
         for (const device of devices) {
@@ -101,7 +101,7 @@ class GameControllerWebHandler {
                 return;
             }
         }
-        console.log('No DualSense found');
+        console.log('Checked for a connected DualSense...No DualSense found');
         this.checkingForDevicesInProgress = false
     };
 
@@ -120,6 +120,10 @@ class DualSenseInputReport {
         }
     }
 
+    // True if the joystick is not near neutral position
+    triggerDown = () => {
+        return (this.l2axis > 0.04 || this.r2axis > 0.04)
+    };
 
     // True if the joystick is not near neutral position
     rightJoyStickHasTriggered = () => {

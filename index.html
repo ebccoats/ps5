@@ -6,20 +6,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <p id="status">No DualSense connected</p>
-    <div id="board"></div>
+    <p id="status">No DualSense connected. </p>
+    <main id="board"></main>
 
-    <!-- Audio with Strudel -->
+    <!-- Import audio library (Strudel) -->
     <script src="https://unpkg.com/@strudel/web@1.3.0"></script>
+    <script src="audio/audio.js"></script>
 
-    <!-- PS5 controller & haptics scripts -->
-    <script src="dualsense.js"></script>
-    <script src="dualsense-modes.js"></script>
+    <!-- Import controller & haptics library (PS5) -->
+    <script src="controller/dualsense.js"></script>
+    <script src="controller/dualsense-connection.js"></script>
+    <script src="controller/haptics.js"></script>
 
-    <!-- Gameplay scripts -->
-    <script src="board.js"></script>
-    <script src="player.js"></script>
-    <script src="main.js" defer></script> <!-- Only load this after DOM content loaded -->
-   
+    <!-- Import graphics library (P5.js) for debugging only! -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@2.3.4/lib/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5.sound@0.4.1/dist/p5.sound.min.js"></script>
+    <script src="rendering/graphics.js"></script>
+
+    <!-- Import gameplay scripts -->
+    <script src="game/board.js"></script>
+    <script src="game/player.js"></script>
+    <script src="index.js" defer></script> <!-- Only load this after DOM content loaded -->
 </body>
 </html>

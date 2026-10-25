@@ -1,3 +1,3 @@
-# ps5
+# Bat in a Cave
 
-Playstation 5 controller active trigger haptics experimentation based on [nondebug's Dualsense Explorer code](https://github.com/nondebug/dualsense/)
+Browser-based JavaScript game that uses haptics & audio to guide your exploration of a dark, underground cave...
