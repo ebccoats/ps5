@@ -6,28 +6,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <p id="status">No DualSense connected. </p>
+    <p id="status">
+        No DualSense connected. To connect your controller:<br>
+        1. Press the "PS" button on your controller until it pairs via Bluetooth.<br>
+        2. <button id="connect">Click here to connect controller to game.</button>
+    </p>
     <main id="board"></main>
-
-    <!-- Import gameplay scripts -->
-    <script src="game/modes.js"></script>
-    <script src="game/board.js"></script>
-    <script src="game/player.js"></script>
 
     <!-- Import audio library (Strudel) -->
     <script src="https://unpkg.com/@strudel/web@1.3.0"></script>
-    <script src="audio/audio.js"></script>
-
-    <!-- Import controller & haptics library (PS5) -->
-    <script src="controller/dualsense.js"></script>
-    <script src="controller/dualsense-connection.js"></script>
-    <script src="controller/haptics.js"></script>
 
     <!-- Import graphics library (P5.js) for debugging only! -->
     <script src="https://cdn.jsdelivr.net/npm/p5@2.3.4/lib/p5.js"></script>
-    <script src="rendering/graphics.js"></script>
 
     <!-- Main game loop -->
-    <script src="index.js" defer></script> <!-- Only load this after DOM content loaded -->
+    <script type="module" src="dist-js/index.js" defer></script>
 </body>
 </html>

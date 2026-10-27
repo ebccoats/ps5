@@ -1,1 +1,4 @@
 .DS_Store
+*.mjs
+/dist-js
+tests/*.js

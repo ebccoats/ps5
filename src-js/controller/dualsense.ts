@@ -1,9 +1,30 @@
+// @ts-nocheck
 // add an instance of GameControllerWebHandler to your game script
 // on the webpage you need a button that calls GameControllerWebHandler.requestDevice()
 // after the user presses that button and gives permissions to access their DualSense controller, you can access them in GameControllerWebHandler.controllers
 
 
-class GameControllerWebHandler {
+export interface GameControllerWebHandler {
+    controllers: DualSenseHid[];
+    requestDevice(): Promise<void>;
+    checkForGrantedDevices(): Promise<void>;
+}
+
+export interface DualSenseInputReport {
+    triggerDown(): boolean;
+    rightJoyStickHasTriggered(): boolean;
+    getRoundedPositionsOnRightJoyStick(): [number, number];
+}
+
+export interface DualSenseHid {
+    device_: WebHIDDevice;
+    input?: DualSenseInputReport;
+    changeTriggerEffect(side: "left" | "right", setting: { mode: string }, ...params: string[]): void;
+    changeRumble(left: number, right: number): void;
+    sendOutputReport(): Promise<boolean>;
+}
+
+export class GameControllerWebHandler {
     constructor() {
         this.controllers = []
         this.VENDOR_ID = Object.freeze({
@@ -107,7 +128,7 @@ class GameControllerWebHandler {
 
 }
 
-class DualSenseInputReport {
+export class DualSenseInputReport {
     constructor(report, handler) {
         this.input = {}
 
@@ -127,7 +148,8 @@ class DualSenseInputReport {
 
     // True if the joystick is not near neutral position
     rightJoyStickHasTriggered = () => {
-        return (this.rsx > 0.04 || this.rsx < -0.04 || this.rsy > 0.04 || this.rsy < -0.04  )
+        let cutoff = 0.20
+        return (this.rsx > cutoff || this.rsx < -cutoff || this.rsy > cutoff || this.rsy < -cutoff  )
     };
 
     getRoundedPositionsOnRightJoyStick = () => {
@@ -417,7 +439,7 @@ class DualSenseInputReport {
 }
 
 
-class DualSenseHid {
+export class DualSenseHid {
     constructor(hidDevice, handler) {
         this.device_ = hidDevice;
         this.h = handler; // game controller handler helper class
@@ -935,4 +957,3 @@ class DualSenseHid {
 
 
 }
-
