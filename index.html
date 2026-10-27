@@ -9,6 +9,11 @@
     <p id="status">No DualSense connected. </p>
     <main id="board"></main>
 
+    <!-- Import gameplay scripts -->
+    <script src="game/modes.js"></script>
+    <script src="game/board.js"></script>
+    <script src="game/player.js"></script>
+
     <!-- Import audio library (Strudel) -->
     <script src="https://unpkg.com/@strudel/web@1.3.0"></script>
     <script src="audio/audio.js"></script>
@@ -20,12 +25,9 @@
 
     <!-- Import graphics library (P5.js) for debugging only! -->
     <script src="https://cdn.jsdelivr.net/npm/p5@2.3.4/lib/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/p5.sound@0.4.1/dist/p5.sound.min.js"></script>
     <script src="rendering/graphics.js"></script>
 
-    <!-- Import gameplay scripts -->
-    <script src="game/board.js"></script>
-    <script src="game/player.js"></script>
+    <!-- Main game loop -->
     <script src="index.js" defer></script> <!-- Only load this after DOM content loaded -->
 </body>
 </html>

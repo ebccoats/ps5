@@ -1,121 +1,78 @@
 // ---------------------------------------------------------------------------------
-// Initialize a new player and a new board, and render them
-// --------------------------------------------------------------------------------- 
-const player = new Player()
-const board = new Board(player)
+// Initialize a new player and board
+// ---------------------------------------------------------------------------------
+const player = new Player();
+const board = new Board(player);
 
-// ---------------------------------------------------------------------------------
-// Initialize the game controller handler
-// ---------------------------------------------------------------------------------
-const controllerHandler = new GameControllerWebHandler();
 
-// ---------------------------------------------------------------------------------
-// Initialize audio sounds
-// ---------------------------------------------------------------------------------
-initStrudel({
-  prebake: () => {
-    samples("github:tidalcycles/dirt-samples") // bd (drums), insect, etc. 
-    samples("https://strudel.b-cdn.net/piano.json") // piano
-  }
-});
+// ---------------------------------------------
+// Feel haptics / audio of where you're looking
+// ---------------------------------------------
 
-// -----------------------------------------------------------------
-// Allow switching haptics & audio modes
-// -----------------------------------------------------------------
-function calculateIntensity(distance) {
-    const decay = 1; // larger for faster sound decay with distance
-    const intensity = 2 / (decay * distance + Math.sqrt(2)) ** 2;
-    return Math.max(0, Math.min(1, intensity)); // must be between 0 and 1
+const ECHOLOCATION_MODE_BY_OBJECT = {
+    [GameObject.ROCK]: GameMode.ECHOLOCATE_ROCK,
+    [GameObject.BUG]: GameMode.ECHOLOCATE_BUG,
+    [GameObject.AIR]: GameMode.ECHOLOCATE_AIR,
+};
+
+function updateEcholocation(controller, playerX, playerY) {
+    const [cameraDX, cameraDY] = controller.input.getRoundedPositionsOnRightJoyStick();
+    const cameraX = playerX + cameraDX;
+    const cameraY = playerY + cameraDY;
+    const object = board.getObjectAt(cameraX, cameraY);
+    const distance = player.getDistanceFromObject(cameraX, cameraY);
+
+    switchMode(ECHOLOCATION_MODE_BY_OBJECT[object], distance);
+    player.changeOrientation(cameraX, cameraY);
+    draw();
 }
 
-var switchingPaused = false
+// ---------------------------------------------
+// Feel haptics / audio of where you currently are
+// ---------------------------------------------
 
-function resumeModeSwitches() {
-    switchingPaused = false
+const FEEDBACK_MODE_BY_OBJECT = {
+    [GameObject.ROCK]: GameMode.ROCK_FEEDBACK,
+    [GameObject.BUG]: GameMode.BUG_FEEDBACK,
+    [GameObject.AIR]: GameMode.AIR_GALLOP,
+};
+
+function applyEnvironmentFeedback() {
+    const object = board.getObjectAt(...player.getLocation());
+    switchMode(FEEDBACK_MODE_BY_OBJECT[object]);
 }
 
-function pauseModeSwitches(time) {
-    switchingPaused = true
-    setTimeout(resumeModeSwitches, time)
-}
+// ---------------------------------------------
+// Read controller input (joystick + trigger)
+// ---------------------------------------------
 
-function switchMode(modeName, distance = 0) {
-    if (switchingPaused && modeName !== "slamRock") return;
+function processControllerInput(controller) {
+    if (!controller.input) return;
 
-    const intensity = calculateIntensity(distance);
-    console.log("Switching to mode", modeName, "at intensity", intensity)
+    const [playerX, playerY] = player.getLocation();
 
-    const hapticsMode = HAPTICS_MODES[modeName];
-    switchHapticsMode(hapticsMode, intensity);
-
-    const audioMode = AUDIO_MODES[modeName];
-    switchAudioMode(audioMode, intensity);
-}
-
-// -----------------------------------------------------------------
-// Continously check for controller input
-// -----------------------------------------------------------------
-
-async function processControllerInput(controller) {
-    if (!controller.input) return
-
-    const [playerX, playerY] = player.getLocation()
-
-    // -------------------------------------------
-    // Feel the haptics of where you are looking
-    // -------------------------------------------
     if (controller.input.rightJoyStickHasTriggered()) {
-        
-        const [cameraDX, cameraDY] = controller.input.getRoundedPositionsOnRightJoyStick()
-        const [cameraX, cameraY] = [playerX + cameraDX, playerY + cameraDY]
-
-        // Change haptics
-        let object = board.getObjectAt(cameraX, cameraY)
-        dist = player.getDistanceFromObject(cameraX, cameraY)
-        // console.log("Distance from object", object,"is", dist)
-        switchMode(object, dist)
-
-        // Change the direction you are looking in
-        player.changeOrientation(cameraX, cameraY)
-        // console.log("Object at Camera Location:", cameraX, cameraY, "is", object)
-
-        draw()
-    } 
-
-    // ---------------------------------------------
-    // Otherwise, only feel the haptics of where you are
-    // ---------------------------------------------
-    else {
-        let object = board.getObjectAt(...player.getLocation())
-        switchMode(object)
-        // console.log("Object at Your Location", player.getPreciseLocation()[0], player.getPreciseLocation()[1],"is", object)
-
+        updateEcholocation(controller, playerX, playerY);
+    } else {
+        applyEnvironmentFeedback();
     }
 
-    // -------------------------------------------------------------
-    // Move forward (in direction of camera) if trigger is down
-    // -------------------------------------------------------------
     if (controller.input.triggerDown()) {
-        player.move(board) // move in the direction of player's orientation
-        draw()
+        player.move(board);
+        draw();
     }
-
 }
 
-
-// ---------------------------------------------------------------------------------------------
-// Start the game loop 
-// ---------------------------------------------------------------------------------------------
-var activeController = null
+const controllerHandler = new GameControllerWebHandler();
+let activeController = null;
 
 async function gameLoop() {
-    if (activeController)
-        processControllerInput(activeController)
-    else
-        activeController = await connectToController()
+    if (activeController) 
+        processControllerInput(activeController);
+    else 
+        activeController = await connectToController();
 
-    window.requestAnimationFrame(gameLoop)
+    window.requestAnimationFrame(gameLoop);
 }
 
 window.requestAnimationFrame(gameLoop);
-

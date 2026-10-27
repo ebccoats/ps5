@@ -38,10 +38,10 @@ function drawBoard(originX, originY) {
         const object = board.getObjectAt(x, y)
 
         switch (object) {
-            case "rock":
+            case GameObject.ROCK:
                 fill(ROCK_COLOR)
                 break
-            case "bug":
+            case GameObject.BUG:
                 fill(BUG_COLOR)
                 break
             default:

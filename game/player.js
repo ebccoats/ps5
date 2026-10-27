@@ -38,11 +38,11 @@ class Player {
       board.generateMoreBoard()
     }
 
-    if (board.getObjectAt(...this.getLocation()) === "rock") {
+    if (board.getObjectAt(...this.getLocation()) === GameObject.ROCK) {
       this.bumpIntoRock()
       
     }
-    else if (board.getObjectAt(...this.getLocation()) === "bug") {
+    else if (board.getObjectAt(...this.getLocation()) === GameObject.BUG) {
       this.eatBug()
     }
 
@@ -67,14 +67,14 @@ class Player {
   }
 
   eatBug() {
-    board.changeObjectAt(...this.getLocation(), "air")
-    switchMode("munchBug")
+    board.changeObjectAt(...this.getLocation(), GameObject.AIR)
+    switchMode(GameMode.BUG_MUNCH)
     pauseModeSwitches(400)
   }
 
   bumpIntoRock() {
     // The player shouldn't be able to enter this space.
-    switchMode("slamRock")
+    switchMode(GameMode.ROCK_SLAM)
     pauseModeSwitches(400)
 
     this.move(board, -20*this.velocity)

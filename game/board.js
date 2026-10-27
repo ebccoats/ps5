@@ -8,11 +8,11 @@ class Board {
         this.player = player
 
         this.brd =  [
-            ["rock", "air", "rock", "air", "air"],
-            ["rock", "air", "air", "air", "air"],
-            ["rock", "rock", "air", "bug", "air"],
-            ["rock", "air", "bug", "bug", "air"],
-            ["rock", "air", "bug", "bug", "air"]        
+            [GameObject.ROCK, GameObject.AIR, GameObject.ROCK, GameObject.AIR, GameObject.AIR],
+            [GameObject.ROCK, GameObject.AIR, GameObject.AIR, GameObject.AIR, GameObject.AIR],
+            [GameObject.ROCK, GameObject.ROCK, GameObject.AIR, GameObject.BUG, GameObject.AIR],
+            [GameObject.ROCK, GameObject.AIR, GameObject.BUG, GameObject.BUG, GameObject.AIR],
+            [GameObject.ROCK, GameObject.AIR, GameObject.BUG, GameObject.BUG, GameObject.AIR]
         ]
 
         // Percentage chance of running into any of these
@@ -55,14 +55,14 @@ class Board {
             const rand = Math.random();
 
             if (rand < this.rock_occs) {
-                return "rock";
+                return GameObject.ROCK;
             }
 
             if (rand < this.rock_occs + this.bug_occs) {
-                return "bug";
+                return GameObject.BUG;
             }
 
-            return "air";
+            return GameObject.AIR;
         };
 
         // Expand existing rows.
@@ -86,7 +86,7 @@ class Board {
 
     getObjectAt(x,y) {
         if (this.isOutOfBounds(x,y)) {
-            return "rock" // Default to "rock" if out of bounds -- it means you're hitting the cave wall
+            return GameObject.ROCK; // Default to rock if out of bounds -- it means you're hitting the cave wall
         }
         return this.brd[y][x]
     }
@@ -104,4 +104,3 @@ class Board {
     }
 
 }
-

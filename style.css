@@ -1,5 +1,4 @@
-:root { color-scheme: dark; }
-body { background: #000; color: #fff; margin: 16px; font-family: sans-serif; }
+body { background: #000; color: #fff; margin: 25px; font-family: sans-serif; }
 
 #status {
     text-align: center;

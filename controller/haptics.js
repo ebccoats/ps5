@@ -3,91 +3,82 @@
 // -----------------------------------------------------------------
 
 class HapticsMode {
-    static DEFAULT_MODE = "23";
-    static DEFAULT_PARAMS = ["ff", "ff", "01", "02", "01", "01", "00"];
-    static DEFAULT_RUMBLE = [0, 0];
-
-    constructor({ name = "", label = "", mode, params, rumble } = {}) {
-        this.name = name;
-        this.label = label;
-        this.mode = mode || HapticsMode.DEFAULT_MODE;
-        this.params = params?.length ? [...params] : [...HapticsMode.DEFAULT_PARAMS];
-        this.rumble = rumble?.length ? [...rumble] : [...HapticsMode.DEFAULT_RUMBLE];
+    constructor({ mode = "23", params = ["ff", "ff", "01", "02", "01", "01", "00"], rumble = [0, 0] } = {}) {
+        this.mode = mode;
+        this.params = params;
+        this.rumble = rumble;
     }
 }
 
-
 const HAPTICS_MODES = {
-    rock: new HapticsMode({
-        name: "rock",
-        label: "Echolocate rock -- light buzz",
+    // Light buzz while near or echolocating a rock.
+    [GameMode.ROCK_FEEDBACK]: new HapticsMode({
         rumble: [0, 10],
-        // params: ["00", "00", "00", "00", "00", "00", "00"],
     }),
-    slamRock: new HapticsMode({
-        name: "slamRock",
-        label: "Deep rumble, no movement",
+    [GameMode.ECHOLOCATE_ROCK]: new HapticsMode({
+        rumble: [0, 10],
+    }),
+    // Deep rumble with no trigger movement.
+    [GameMode.ROCK_SLAM]: new HapticsMode({
         rumble: [200, 0],
         params: ["00", "00", "00", "00", "00", "00", "00"],
     }),
 
-    bug: new HapticsMode({
-        name: "bug",
-        label: "Echolocate bug -- light buzz",
+    // Light buzz while near or echolocating a bug.
+    [GameMode.BUG_FEEDBACK]: new HapticsMode({
         rumble: [0, 10],
     }),
-    munchBug: new HapticsMode({
-        name: "munchBug",
-        label: "Less light rumble",
+    [GameMode.ECHOLOCATE_BUG]: new HapticsMode({
+        rumble: [0, 10],
+    }),
+    // Light rumble while munching a bug.
+    [GameMode.BUG_MUNCH]: new HapticsMode({
         rumble: [0, 50],
     }),
-    air: new HapticsMode({
-        name: "air",
-        label: "Gallop",
-    }),
-    none: new HapticsMode({
-        name: "none",
-        label: "Full zero",
+
+    // Trigger feedback for echolocating air.
+    [GameMode.ECHOLOCATE_AIR]: new HapticsMode(),
+    // Trigger feedback for galloping.
+    [GameMode.AIR_GALLOP]: new HapticsMode(),
+
+    // Disable trigger effects and rumble.
+    [GameMode.DISABLED]: new HapticsMode({
         mode: "05",
         params: ["00", "00", "00", "00", "00", "00", "00"],
     }),
 };
 
+// -----------------------------------------------------------------
+// Switch to a different haptic based on the mode name
+// -----------------------------------------------------------------
 
-// -----------------------------------------------------------------
-// Set of controllers currently sending haptic mode updates to prevent duplicate sends
-// -----------------------------------------------------------------
-const SENDING = new WeakSet();
+const SENDING = new WeakSet(); // Prevent overlapping updates to the same controller.
 
-// -----------------------------------------------------------------
-// Send the selected haptic mode to all connected controllers
-// -----------------------------------------------------------------
 function scaleByIntensity(value, intensity) {
     return Math.round(value * intensity);
 }
 
+function applyTriggerMode(controller, mode) {
+    for (const side of ["left", "right"]) {
+        controller.changeTriggerEffect(side, { mode: mode.mode }, ...mode.params);
+    }
+}
+
+function applyRumble(controller, mode, intensity) {
+    const rumble = mode.rumble.map(value => scaleByIntensity(value, intensity));
+    controller.changeRumble(...rumble);
+}
+
 async function switchHapticsMode(mode, intensity) {
-    controller = activeController
+    const controller = activeController;
 
     if (SENDING.has(controller) && intensity <= 0.99) return;
 
     SENDING.add(controller);
 
-    // const scaledParams = mode.params.map(param =>
-    //     Math.round(parseInt(param, 16) * intensity).toString(16).padStart(2, "0")
-    // );
     try {
-        controller.changeTriggerEffect(
-            "left", { mode: mode.mode }, ...mode.params
-        );
-        controller.changeTriggerEffect(
-            "right", { mode: mode.mode }, ...mode.params
-        );
-        controller.changeRumble(
-            scaleByIntensity(mode.rumble[0], intensity),
-            scaleByIntensity(mode.rumble[1], intensity)
-        );
-
+        applyTriggerMode(controller, mode);
+        applyRumble(controller, mode, intensity);
         await controller.sendOutputReport();
     } catch (error) {
         console.error("Failed to update controller:", error);
@@ -95,4 +86,3 @@ async function switchHapticsMode(mode, intensity) {
         SENDING.delete(controller);
     }
 }
-
