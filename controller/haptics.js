@@ -13,10 +13,11 @@ class HapticsMode {
 const HAPTICS_MODES = {
     // Light buzz while near or echolocating a rock.
     [GameMode.ROCK_FEEDBACK]: new HapticsMode({
-        rumble: [0, 10],
+        // rumble: [0, 10],
     }),
     [GameMode.ECHOLOCATE_ROCK]: new HapticsMode({
         rumble: [0, 10],
+        params: ["ff", "01", "02", "10", "01", "01", "00"],
     }),
     // Deep rumble with no trigger movement.
     [GameMode.ROCK_SLAM]: new HapticsMode({
