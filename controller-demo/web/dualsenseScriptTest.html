@@ -10,8 +10,9 @@
     </style>
 </head>
 <body>
-    <script src="../controller/dualsense.js"></script>
-    <script>
+    <script type="module">
+        import { GameControllerWebHandler } from "../../dist-js/controller/dualsense.js";
+
         const dsHandler = new GameControllerWebHandler();
 
         const TRIGGER_MODES = [

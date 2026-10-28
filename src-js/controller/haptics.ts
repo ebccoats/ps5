@@ -8,10 +8,9 @@ import type { GameMode } from "../game/modes.js";
 
 export type HapticsModeOptions = Partial<HapticsMode>;
 
-
 export class HapticsMode {
-    readonly mode: string = "23";
-    readonly params: string[] = ["ff", "ff", "01", "02", "01", "01", "00"];
+    readonly mode: number = 23;
+    readonly params: number[] = [255, 255, 1, 2, 1, 1, 0];
     readonly rumble: [number, number] = [0, 0];
 
     constructor(options: HapticsModeOptions = {}) {
@@ -31,14 +30,14 @@ function scaleByIntensity(value: number, intensity: number): number {
     return Math.round(value * intensity);
 }
 
-function applyTriggerMode(controller: DualSenseHid, mode: GameMode["hapticsMode"]): void {
+function applyTriggerMode(controller: DualSenseHid, settings: HapticsMode): void {
     for (const side of ["left", "right"] as const) {
-        controller.changeTriggerEffect(side, { mode: mode.mode }, ...mode.params);
+        controller.changeTriggerEffect(side, settings);
     }
 }
 
-function applyRumble(controller: DualSenseHid, mode: GameMode["hapticsMode"], intensity: number): void {
-    const rumble = mode.rumble.map(value => scaleByIntensity(value, intensity));
+function applyRumble(controller: DualSenseHid, settings: HapticsMode, intensity: number): void {
+    const rumble = settings.rumble.map((value: number) => scaleByIntensity(value, intensity));
     controller.changeRumble(rumble[0], rumble[1]);
 }
 

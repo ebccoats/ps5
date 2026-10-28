@@ -19,7 +19,10 @@ export interface DualSenseInputReport {
 export interface DualSenseHid {
     device_: WebHIDDevice;
     input?: DualSenseInputReport;
-    changeTriggerEffect(side: "left" | "right", setting: { mode: string }, ...params: string[]): void;
+    changeTriggerEffect(
+        side: "left" | "right",
+        setting: { mode: number; params: number[] }
+    ): void;
     changeRumble(left: number, right: number): void;
     sendOutputReport(): Promise<boolean>;
 }

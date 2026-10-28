@@ -35,7 +35,7 @@ export class GameMode {
         }),
         hapticsMode: new HapticsMode({
             rumble: [0, 10],
-            params: ["ff", "ff", "02", "10", "01", "01", "00"],
+            params: [255, 1, 2, 10, 1, 1, 0],
         }),
         distanceCutoff: 1
     });
@@ -47,8 +47,9 @@ export class GameMode {
             sound: "lt",
         }),
         hapticsMode: new HapticsMode({
+            mode: 0,
             rumble: [200, 0],
-            params: ["00", "00", "00", "00", "00", "00", "00"],
+            params: [0, 0, 0, 0, 0, 0, 0],
         }),
         priority: 1,
     });
@@ -59,7 +60,9 @@ export class GameMode {
             n: "<0 0 ->*16",
             sound: "insect",
         }),
-        hapticsMode: new HapticsMode({ rumble: [0, 10] }),
+        hapticsMode: new HapticsMode({ 
+            rumble: [0, 10] 
+        }),
     });
 
     static MUNCH_BUG = new GameMode({
@@ -68,7 +71,9 @@ export class GameMode {
             n: "<0 1 2 3 4 5 6 5 4 3 4 5 6>*30",
             chord: "C",
         }),
-        hapticsMode: new HapticsMode({ rumble: [0, 50] }),
+        hapticsMode: new HapticsMode({ 
+            rumble: [0, 50] 
+        }),
         priority: 1,
     });
 
