@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DS1054Z</title>
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            margin: 16px;
+            background: #161916;
+            color: #e6eee8;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        h1 { font-size: 20px; font-weight: 600; margin: 0 0 12px; }
+        button {
+            font: inherit;
+            background: #243028;
+            color: inherit;
+            border: 1px solid #3c4f43;
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+        button:disabled { opacity: 0.45; }
+        .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .identity { color: #b7c7bc; }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 280px;
+            gap: 16px;
+            align-items: start;
+        }
+        .screen { height: min(78vh, 820px); min-height: 420px; }
+        canvas { width: 100%; height: 100%; display: block; border-radius: 8px; }
+        aside { display: flex; flex-direction: column; gap: 10px; }
+        .channel, .readout { margin: 0; }
+        .channel {
+            display: grid;
+            grid-template-columns: 72px 1fr auto auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .channel label { display: flex; gap: 6px; align-items: center; font-weight: 650; }
+        .channel span { min-width: 0; font-variant-numeric: tabular-nums; }
+        .step { width: 32px; padding: 6px 0; }
+        .note { color: #9aada1; font-size: 14px; }
+        @media (max-width: 800px) {
+            .layout { grid-template-columns: 1fr; }
+            .screen { height: 62vh; }
+        }
+    </style>
+</head>
+<body>
+    <script src="usbtmc.js"></script>
+    <script src="rigol.js"></script>
+    <script src="scope-view.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
