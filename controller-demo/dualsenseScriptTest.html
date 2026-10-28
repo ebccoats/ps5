@@ -15,21 +15,21 @@
         const dsHandler = new GameControllerWebHandler();
 
         const TRIGGER_MODES = [
-            { value: "linear", label: "Linear resistance", mode: 0x21, params: [0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00] },
-            { value: "linearTough", label: "Linear tougher resistance", mode: 0x21, params: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff] },
-            { value: "nonlinear", label: "Nonlinear resistance", mode: 0x22, params: [0xf5, 0xd0, 0x30, 0xff, 0x00, 0x00, 0x00] },
-            { value: "threshold", label: "Weapon/linear threshold", mode: 0x25, params: [0x90, 0xa0, 0xff, 0x00, 0x00, 0x00, 0x00] },
-            { value: "bowThreshold", label: "Bow/nonlinear threshold", mode: 0x22, params: [0xff, 0x30, 0xff, 0x30, 0x00, 0x00, 0x00] },
-            { value: "vibration", label: "Vibration", mode: 0x06, params: [0x50, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00] },
-            { value: "heartbeat", label: "Heartbeat", mode: 0x06, params: [0x01, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00] },
-            { value: "mosquito", label: "Mosquito", mode: 0x06, params: [0xff, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00] },
-            { value: "sineRhythm", label: "Gallop/Sine wave pattern", mode: 0x23, params: [0xff, 0xff, 0x01, 0x02, 0x01, 0x01, 0x00] },
-            { value: "brightLight", label: "Bright light?", mode: 0x23, params: [0xff, 0x01, 0x02, 0x60, 0x01, 0x01, 0x00] },
-            { value: "helicopter", label: "Riding in a helicopter", mode: 0x23, params: [0xff, 0x01, 0x02, 0x10, 0x01, 0x01, 0x00] },
-            { value: "squareRhythm", label: "Machine/Square wave pattern", mode: 0x27, params: [0x10, 0xff, 0x03, 0x10, 0x3f, 0xdf, 0x00] },
-            { value: "fadingbuzz", label: "Fading buzz", mode: 0x27, params: [0x10, 0xff, 0x03, 0x30, 0x3f, 0xdf, 0x00] },
-            { value: "none", label: "Reset after next pull", mode: 0x00, params: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
-            { value: "limp", label: "Full zero", mode: 0x05, params: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+            { value: "linear", label: "Linear resistance", mode: 33, params: [255, 255, 0, 0, 0, 0, 0] },
+            { value: "linearTough", label: "Linear tougher resistance", mode: 33, params: [255, 255, 255, 255, 255, 255, 255] },
+            { value: "nonlinear", label: "Nonlinear resistance", mode: 34, params: [245, 208, 48, 255, 0, 0, 0] },
+            { value: "threshold", label: "Weapon/linear threshold", mode: 37, params: [144, 160, 255, 0, 0, 0, 0] },
+            { value: "bowThreshold", label: "Bow/nonlinear threshold", mode: 34, params: [255, 48, 255, 48, 0, 0, 0] },
+            { value: "vibration", label: "Vibration", mode: 6, params: [80, 1, 16, 0, 0, 0, 0] },
+            { value: "heartbeat", label: "Heartbeat", mode: 6, params: [1, 16, 1, 0, 0, 0, 0] },
+            { value: "mosquito", label: "Mosquito", mode: 6, params: [255, 16, 1, 0, 0, 0, 0] },
+            { value: "sineRhythm", label: "Gallop/Sine wave pattern", mode: 35, params: [255, 255, 1, 2, 1, 1, 0] },
+            { value: "brightLight", label: "Bright light?", mode: 35, params: [255, 1, 2, 96, 1, 1, 0] },
+            { value: "helicopter", label: "Riding in a helicopter", mode: 35, params: [255, 1, 2, 16, 1, 1, 0] },
+            { value: "squareRhythm", label: "Machine/Square wave pattern", mode: 39, params: [16, 255, 3, 16, 63, 223, 0] },
+            { value: "fadingbuzz", label: "Fading buzz", mode: 39, params: [16, 255, 3, 48, 63, 223, 0] },
+            { value: "none", label: "Reset after next pull", mode: 0, params: [0, 0, 0, 0, 0, 0, 0] },
+            { value: "limp", label: "Full zero", mode: 5, params: [0, 0, 0, 0, 0, 0, 0] },
         ];
 
         const BUTTON_FIELDS = [
@@ -59,10 +59,6 @@
 
         function hex16(value) {
             return ("0000" + (value >>> 0).toString(16)).slice(-4);
-        }
-
-        function hexByte(value) {
-            return (value & 0xff).toString(16);
         }
 
         function addBreak(parent) {
@@ -168,26 +164,27 @@
             addBreak(document.body);
         }
 
+        function decimalByte(value) {
+            if (value == null || String(value).trim() === "")
+                return 0;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : 0;
+        }
+
         function effectSetting(prefix) {
+            const params = [];
+            for (let i = 1; i <= 7; i++)
+                params.push(decimalByte(ui[prefix + "effectparam" + i].value));
             return {
-                mode: ui[prefix + "effectmode"].value,
-                p1: ui[prefix + "effectparam1"].value,
-                p2: ui[prefix + "effectparam2"].value,
-                p3: ui[prefix + "effectparam3"].value,
-                p4: ui[prefix + "effectparam4"].value,
-                p5: ui[prefix + "effectparam5"].value,
-                p6: ui[prefix + "effectparam6"].value,
-                p7: ui[prefix + "effectparam7"].value,
-                p8: ui[prefix + "effectparam8"].value,
-                p9: ui[prefix + "effectparam9"].value,
-                p10: ui[prefix + "effectparam10"].value,
+                mode: decimalByte(ui[prefix + "effectmode"].value),
+                params,
             };
         }
 
         function writeEffectFields(prefix, mode, params) {
-            ui[prefix + "effectmode"].value = hexByte(mode);
+            ui[prefix + "effectmode"].value = String(mode);
             for (let i = 0; i < 7; i++)
-                ui[prefix + "effectparam" + (i + 1)].value = hexByte(params[i] || 0);
+                ui[prefix + "effectparam" + (i + 1)].value = String(params[i] || 0);
         }
 
         function applyPreset(mode) {
@@ -388,8 +385,8 @@
 
             const effectFields = document.createElement("div");
             const sides = [
-                ["l2", "L2", "26", "90", "A0", "FF"],
-                ["r2", "R2", "26", "90", "A0", "FF"],
+                ["l2", "L2", "38", "144", "160", "255"],
+                ["r2", "R2", "38", "144", "160", "255"],
             ];
             for (const [prefix, name, mode, p1, p2, p3] of sides) {
                 addText(effectFields, prefix + "effectmode", name + " trigger effect mode", { value: mode });
@@ -509,10 +506,8 @@
         }
 
         function pushEffects(controller) {
-            const left = effectSetting("l2");
-            const right = effectSetting("r2");
-            controller.changeTriggerEffect("left", { mode: left.mode }, left.p1, left.p2, left.p3, left.p4, left.p5, left.p6, left.p7, left.p8, left.p9, left.p10);
-            controller.changeTriggerEffect("right", { mode: right.mode }, right.p1, right.p2, right.p3, right.p4, right.p5, right.p6, right.p7, right.p8, right.p9, right.p10);
+            controller.changeTriggerEffect("left", effectSetting("l2"));
+            controller.changeTriggerEffect("right", effectSetting("r2"));
         }
 
         function applyOutput(controller) {
@@ -527,11 +522,11 @@
             controller.lightbarBlue_ = blue;
             controller.changeLightbarSetup(Number(ui.lightbarsetup.value));
             controller.changePlayerLedBrightness(Number(ui.playerledbrightness.value));
-            controller.playerLeds_ = (ui.playerLed1.checked ? 0x01 : 0)
-                | (ui.playerLed2.checked ? 0x02 : 0)
-                | (ui.playerLed3.checked ? 0x04 : 0)
-                | (ui.playerLed4.checked ? 0x08 : 0)
-                | (ui.playerLed5.checked ? 0x10 : 0);
+            controller.playerLeds_ = (ui.playerLed1.checked ? 1 : 0)
+                | (ui.playerLed2.checked ? 2 : 0)
+                | (ui.playerLed3.checked ? 4 : 0)
+                | (ui.playerLed4.checked ? 8 : 0)
+                | (ui.playerLed5.checked ? 16 : 0);
             controller.releaseLeds(ui.releaseleds.checked);
             controller.mute(Number(ui.muteLed.value));
             controller.changeRumble(Number(ui.rumbleleft.value), Number(ui.rumbleright.value));
@@ -547,13 +542,13 @@
                 Number(ui.audiopath.value)
             );
             controller.changePowerSave(
-                (ui.powersavetouch.checked ? 0x01 : 0)
-                | (ui.powersavemotion.checked ? 0x02 : 0)
-                | (ui.powersavehaptics.checked ? 0x04 : 0)
-                | (ui.powersaveaudio.checked ? 0x08 : 0)
-                | (ui.mutespeaker.checked ? 0x20 : 0)
-                | (ui.muteheadphones.checked ? 0x40 : 0)
-                | (ui.mutehaptics.checked ? 0x80 : 0)
+                (ui.powersavetouch.checked ? 1 : 0)
+                | (ui.powersavemotion.checked ? 2 : 0)
+                | (ui.powersavehaptics.checked ? 4 : 0)
+                | (ui.powersaveaudio.checked ? 8 : 0)
+                | (ui.mutespeaker.checked ? 32 : 0)
+                | (ui.muteheadphones.checked ? 64 : 0)
+                | (ui.mutehaptics.checked ? 128 : 0)
             );
         }
 
