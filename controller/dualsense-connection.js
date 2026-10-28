@@ -18,7 +18,7 @@ async function connectToController() {
         return activeController
     }
 
-    connectionStatus.textContent = "No DualSense connected. Click the PS5 button on your controller to connect."
+    connectionStatus.textContent = "No DualSense connected. Push the PS5 button on your controller to connect."
 
     if (connectionAttemptInProgress || controllerHandler.checkingForDevicesInProgress)
         return null

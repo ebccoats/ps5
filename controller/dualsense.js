@@ -585,31 +585,36 @@ class DualSenseHid {
         this.lightbarBlue_ = blue;
     }
 
-    changeTriggerEffect = (side, setting, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10) => {
+    // wants the trigger parameters packaged up into the "setting" object
+    // "setting" object has mode, param[p1, p2, p3, p4, p5, p6, p7]
+    // setting can accept hex values 0-ff or decimal from 0-255 
+
+
+    changeTriggerEffect = (side, setting) => {
         if (side === "left") {
-            this.l2EffectMode_ = this.parseHex(setting.mode)
-            this.l2EffectParam1_ = this.parseHex(p1) ?? this.parseHex(setting.p1)
-            this.l2EffectParam2_ = this.parseHex(p2) ?? this.parseHex(setting.p2)
-            this.l2EffectParam3_ = this.parseHex(p3) ?? this.parseHex(setting.p3)
-            this.l2EffectParam4_ = this.parseHex(p4) ?? this.parseHex(setting.p4)
-            this.l2EffectParam5_ = this.parseHex(p5) ?? this.parseHex(setting.p5)
-            this.l2EffectParam6_ = this.parseHex(p6) ?? this.parseHex(setting.p6)
-            this.l2EffectParam7_ = this.parseHex(p7) ?? this.parseHex(setting.p7)
-            this.l2EffectParam8_ = this.parseHex(p8) ?? this.parseHex(setting.p8)
-            this.l2EffectParam9_ = this.parseHex(p9) ?? this.parseHex(setting.p9)
-            this.l2EffectParam10_ = this.parseHex(p10) ?? this.parseHex(setting.p10)
+            this.l2EffectMode_ = setting.mode
+            this.l2EffectParam1_ = setting.params[0] 
+            this.l2EffectParam2_ = setting.params[1]
+            this.l2EffectParam3_ = setting.params[2]
+            this.l2EffectParam4_ = setting.params[3]
+            this.l2EffectParam5_ = setting.params[4]
+            this.l2EffectParam6_ = setting.params[5]
+            this.l2EffectParam7_ = setting.params[6]
+            // this.l2EffectParam8_ = setting.params[7]
+            // this.l2EffectParam9_ = setting.params[8]
+            // this.l2EffectParam10_ = setting.params[9]
         } else if (side === "right") {
-            this.r2EffectMode_ = this.parseHex(setting.mode)
-            this.r2EffectParam1_ = this.parseHex(p1) ?? this.parseHex(setting.p1)
-            this.r2EffectParam2_ = this.parseHex(p2) ?? this.parseHex(setting.p2)
-            this.r2EffectParam3_ = this.parseHex(p3) ?? this.parseHex(setting.p3)
-            this.r2EffectParam4_ = this.parseHex(p4) ?? this.parseHex(setting.p4)
-            this.r2EffectParam5_ = this.parseHex(p5) ?? this.parseHex(setting.p5)
-            this.r2EffectParam6_ = this.parseHex(p6) ?? this.parseHex(setting.p6)
-            this.r2EffectParam7_ = this.parseHex(p7) ?? this.parseHex(setting.p7)
-            this.r2EffectParam8_ = this.parseHex(p8) ?? this.parseHex(setting.p8)
-            this.r2EffectParam9_ = this.parseHex(p9) ?? this.parseHex(setting.p9)
-            this.r2EffectParam10_ = this.parseHex(p10) ?? this.parseHex(setting.p10)
+            this.r2EffectMode_ = setting.mode
+            this.r2EffectParam1_ = setting.params[0] 
+            this.r2EffectParam2_ = setting.params[1]
+            this.r2EffectParam3_ = setting.params[2]
+            this.r2EffectParam4_ = setting.params[3]
+            this.r2EffectParam5_ = setting.params[4]
+            this.r2EffectParam6_ = setting.params[5]
+            this.r2EffectParam7_ = setting.params[6]
+            // this.r2EffectParam8_ = setting.params[7]
+            // this.r2EffectParam9_ = setting.params[8]
+            // this.r2EffectParam10_ = setting.params[9]
         }
 
     }

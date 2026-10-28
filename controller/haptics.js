@@ -2,8 +2,14 @@
 // List of haptic modes for the DualSense controller
 // -----------------------------------------------------------------
 
+
+// call these HapticsMode objects "settings" when passing around as arguments
 class HapticsMode {
-    constructor({ mode = "23", params = ["ff", "ff", "01", "02", "01", "01", "00"], rumble = [0, 0] } = {}) {
+    constructor({ 
+        mode = 23,
+        rumble = [0, 0],
+        params = [255, 255, 1, 2, 1, 1, 0],
+    } = {}) {
         this.mode = mode;
         this.params = params;
         this.rumble = rumble;
@@ -17,12 +23,12 @@ const HAPTICS_MODES = {
     }),
     [GameMode.ECHOLOCATE_ROCK]: new HapticsMode({
         rumble: [0, 10],
-        params: ["ff", "01", "02", "10", "01", "01", "00"],
+        params: [255, 1, 2, 10, 1, 1, 0],
     }),
     // Deep rumble with no trigger movement.
     [GameMode.ROCK_SLAM]: new HapticsMode({
         rumble: [200, 0],
-        params: ["00", "00", "00", "00", "00", "00", "00"],
+        params: [0, 0, 0, 0, 0, 0, 0],
     }),
 
     // Light buzz while near or echolocating a bug.
@@ -44,8 +50,8 @@ const HAPTICS_MODES = {
 
     // Disable trigger effects and rumble.
     [GameMode.DISABLED]: new HapticsMode({
-        mode: "05",
-        params: ["00", "00", "00", "00", "00", "00", "00"],
+        mode: 5,
+        params: [0, 0, 0, 0, 0, 0, 0],
     }),
 };
 
@@ -59,18 +65,18 @@ function scaleByIntensity(value, intensity) {
     return Math.round(value * intensity);
 }
 
-function applyTriggerMode(controller, mode) {
+function applyTriggerMode(controller, settings) {
     for (const side of ["left", "right"]) {
-        controller.changeTriggerEffect(side, { mode: mode.mode }, ...mode.params);
+        controller.changeTriggerEffect(side, settings);
     }
 }
 
-function applyRumble(controller, mode, intensity) {
-    const rumble = mode.rumble.map(value => scaleByIntensity(value, intensity));
+function applyRumble(controller, settings, intensity) {
+    const rumble = settings.rumble.map(value => scaleByIntensity(value, intensity));
     controller.changeRumble(...rumble);
 }
 
-async function switchHapticsMode(mode, intensity) {
+async function switchHapticsMode(settings, intensity) {
     const controller = activeController;
 
     if (SENDING.has(controller) && intensity <= 0.99) return;
@@ -78,8 +84,8 @@ async function switchHapticsMode(mode, intensity) {
     SENDING.add(controller);
 
     try {
-        applyTriggerMode(controller, mode);
-        applyRumble(controller, mode, intensity);
+        applyTriggerMode(controller, settings);
+        applyRumble(controller, settings, intensity);
         await controller.sendOutputReport();
     } catch (error) {
         console.error("Failed to update controller:", error);
