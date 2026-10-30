@@ -1,0 +1,32 @@
+{
+  "name": "Bow/nonlinear threshold",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 34,
+    "params": [
+      255,
+      48,
+      255,
+      48,
+      0,
+      0,
+      0
+    ]
+  },
+  "right": {
+    "mode": 34,
+    "params": [
+      255,
+      48,
+      255,
+      48,
+      0,
+      0,
+      0
+    ]
+  }
+}

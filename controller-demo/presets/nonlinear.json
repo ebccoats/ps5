@@ -1,0 +1,32 @@
+{
+  "name": "Nonlinear resistance",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 34,
+    "params": [
+      245,
+      208,
+      48,
+      255,
+      0,
+      0,
+      0
+    ]
+  },
+  "right": {
+    "mode": 34,
+    "params": [
+      245,
+      208,
+      48,
+      255,
+      0,
+      0,
+      0
+    ]
+  }
+}

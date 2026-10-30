@@ -1,0 +1,32 @@
+{
+  "name": "Vibration",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 6,
+    "params": [
+      80,
+      1,
+      16,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "right": {
+    "mode": 6,
+    "params": [
+      80,
+      1,
+      16,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

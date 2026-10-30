@@ -1,0 +1,32 @@
+{
+  "name": "Weapon/linear threshold",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 37,
+    "params": [
+      144,
+      160,
+      255,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "right": {
+    "mode": 37,
+    "params": [
+      144,
+      160,
+      255,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

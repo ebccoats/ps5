@@ -1,5 +1,7 @@
-// USBTMC over WebUSB. The DS1054Z is full speed: each bulk packet is 64 bytes,
-// and the 12-byte header on the first packet says how many message bytes follow.
+// USBTMC over WebUSB. The DS1054Z is high-speed but its bulk endpoints advertise
+// 64-byte packets. A transfer longer than one packet is cut off after the first,
+// so every read and write below is a single packet. The 12-byte header on the
+// first IN packet says how many message bytes follow; later packets are raw data.
 
 const USBTMC_DEV_DEP_MSG_OUT = 1;
 const USBTMC_REQUEST_DEV_DEP_MSG_IN = 2;
@@ -148,38 +150,48 @@ class Usbtmc {
         const device = this.requireDevice();
         const payload = new TextEncoder().encode(text.endsWith("\n") ? text : text + "\n");
         const tag = this.nextTag();
-        const message = packOut(tag, payload);
-        const result = await device.transferOut(this.epOut, message);
-        if (result.status !== "ok")
-            throw new Error("USB write failed (" + result.status + ")");
+        await this.bulkOut(device, packOut(tag, payload));
+    }
+
+    packetBytes() {
+        const reported = this.packetSize || 64;
+        return reported > 64 ? 64 : reported;
+    }
+
+    async bulkOut(device, message) {
+        const packet = this.packetBytes();
+        for (let offset = 0; offset < message.length; offset += packet) {
+            const chunk = message.subarray(offset, offset + packet);
+            const result = await device.transferOut(this.epOut, chunk);
+            if (result.status !== "ok")
+                throw new Error("USB write failed (" + result.status + ")");
+        }
     }
 
     async readUnlocked(maxBytes) {
         const device = this.requireDevice();
         const tag = this.nextTag();
         this.lastInTag = tag;
-        const request = packIn(tag, maxBytes);
-        const sent = await device.transferOut(this.epOut, request);
-        if (sent.status !== "ok")
-            throw new Error("USB read request failed (" + sent.status + ")");
+        await this.bulkOut(device, packIn(tag, maxBytes));
 
         const chunks = [];
         let got = 0;
         let size = null;
         const started = performance.now();
+        const packet = this.packetBytes();
         while (size == null || got < 12 + size) {
             if (performance.now() - started > 2000) {
                 await this.abortIn().catch(() => {});
                 throw new Error("The scope did not answer");
             }
-            const want = size == null ? Math.max(this.packetSize, Math.min(maxBytes + 12, 16384)) : Math.max(this.packetSize, 12 + size - got);
-            const result = await device.transferIn(this.epIn, want);
+            const result = await device.transferIn(this.epIn, packet);
             if (result.status !== "ok")
                 throw new Error("USB read failed (" + result.status + ")");
             if (!result.data || result.data.byteLength === 0) {
-                if (size == null)
-                    throw new Error("The scope sent an empty reply");
-                break;
+                if (chunks.length === 0)
+                    continue;
+                await this.abortIn().catch(() => {});
+                throw new Error("The scope reply ended early");
             }
             const bytes = copyDataView(result.data);
             chunks.push(bytes);
@@ -189,6 +201,16 @@ class Usbtmc {
                 if (head[0] !== USBTMC_DEV_DEP_MSG_IN)
                     throw new Error("Unexpected USB reply");
                 size = head[4] | (head[5] << 8) | (head[6] << 16) | (head[7] << 24);
+                if (size > maxBytes) {
+                    await this.abortIn().catch(() => {});
+                    throw new Error("The scope reply is larger than requested");
+                }
+            }
+            if (size != null && got >= 12 + size)
+                break;
+            if (bytes.length < packet) {
+                await this.abortIn().catch(() => {});
+                throw new Error("The scope reply ended early");
             }
         }
         const all = concatBytes(chunks);

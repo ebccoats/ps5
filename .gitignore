@@ -2,3 +2,4 @@
 *.mjs
 /dist-js
 tests/*.js
+controller-demo/oscilloscope/.venv/

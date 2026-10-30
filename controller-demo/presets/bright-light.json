@@ -1,0 +1,32 @@
+{
+  "name": "Bright light?",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 35,
+    "params": [
+      255,
+      1,
+      2,
+      96,
+      1,
+      1,
+      0
+    ]
+  },
+  "right": {
+    "mode": 35,
+    "params": [
+      255,
+      1,
+      2,
+      96,
+      1,
+      1,
+      0
+    ]
+  }
+}

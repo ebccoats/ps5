@@ -1,0 +1,32 @@
+{
+  "name": "Linear tougher resistance",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 33,
+    "params": [
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255
+    ]
+  },
+  "right": {
+    "mode": 33,
+    "params": [
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255
+    ]
+  }
+}

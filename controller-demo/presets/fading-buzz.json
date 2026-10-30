@@ -1,0 +1,32 @@
+{
+  "name": "Fading buzz",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 39,
+    "params": [
+      16,
+      255,
+      3,
+      48,
+      63,
+      223,
+      0
+    ]
+  },
+  "right": {
+    "mode": 39,
+    "params": [
+      16,
+      255,
+      3,
+      48,
+      63,
+      223,
+      0
+    ]
+  }
+}

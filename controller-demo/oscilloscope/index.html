@@ -29,7 +29,7 @@
             gap: 16px;
             align-items: start;
         }
-        .screen { height: min(78vh, 820px); min-height: 420px; }
+        .screen { height: min(39vh, 410px); min-height: 210px; }
         canvas { width: 100%; height: 100%; display: block; border-radius: 8px; }
         aside { display: flex; flex-direction: column; gap: 10px; }
         .channel, .readout { margin: 0; }
@@ -43,15 +43,92 @@
         .channel span { min-width: 0; font-variant-numeric: tabular-nums; }
         .step { width: 32px; padding: 6px 0; }
         .note { color: #9aada1; font-size: 14px; }
+        .controller-section {
+            border: 1px solid #24352c;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .controller-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .controller-head h2 { font-size: 16px; font-weight: 650; margin: 0; }
+        .controller-head .note { margin: 0; }
+        .presets { margin-bottom: 12px; }
+        .presets h3 { font-size: 15px; font-weight: 650; margin: 0 0 8px; }
+        .preset-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .preset-save { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+        .preset-save label { display: flex; gap: 8px; align-items: center; }
+        .preset-save input {
+            font: inherit;
+            width: 14rem;
+            box-sizing: border-box;
+            background: #243028;
+            color: inherit;
+            border: 1px solid #3c4f43;
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+        .preset-note { margin: 0; color: #9aada1; font-size: 14px; }
+        .haptics {
+            display: grid;
+            grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "rumble both ." "rumble panels .";
+            gap: 12px;
+            align-items: start;
+        }
+        .haptics.split {
+            grid-template-areas: "rumble both both" "rumble panels panels";
+        }
+        .both-triggers { grid-area: both; display: flex; gap: 8px; align-items: center; }
+        .trigger-panels { grid-area: panels; display: grid; gap: 12px; min-width: 0; }
+        .haptics.split .trigger-panels { grid-template-columns: 1fr 1fr; }
+        .rumble-panel { grid-area: rumble; }
+        .panel {
+            background: #101612;
+            border: 1px solid #24352c;
+            border-radius: 8px;
+            padding: 12px;
+            min-width: 0;
+        }
+        .panel h3 { font-size: 15px; font-weight: 650; margin: 0 0 10px; }
+        .mode-row, .rumble-row {
+            display: grid;
+            grid-template-columns: 7.5rem 4.5rem minmax(0, 1fr);
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .panel input[type="range"] { width: 100%; }
+        .byte-field {
+            font: inherit;
+            width: 100%;
+            box-sizing: border-box;
+            background: #243028;
+            color: inherit;
+            border: 1px solid #3c4f43;
+            border-radius: 6px;
+            padding: 4px 6px;
+            text-align: right;
+        }
+        .param-value { text-align: right; font-variant-numeric: tabular-nums; }
         @media (max-width: 800px) {
             .layout { grid-template-columns: 1fr; }
-            .screen { height: 62vh; }
+            .screen { height: 31vh; min-height: 160px; }
+            .haptics, .haptics.split {
+                grid-template-columns: 1fr;
+                grid-template-areas: "rumble" "both" "panels";
+            }
+            .haptics.split .trigger-panels { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <script src="usbtmc.js"></script>
-    <script src="rigol.js"></script>
+    <script src="/controller/dualsense.js"></script>
     <script src="scope-view.js"></script>
     <script src="app.js"></script>
 </body>

@@ -1,0 +1,17 @@
+[
+  "linear",
+  "linear-tough",
+  "nonlinear",
+  "threshold",
+  "bow-threshold",
+  "vibration",
+  "heartbeat",
+  "mosquito",
+  "sine-rhythm",
+  "bright-light",
+  "helicopter",
+  "square-rhythm",
+  "fading-buzz",
+  "none",
+  "limp"
+]

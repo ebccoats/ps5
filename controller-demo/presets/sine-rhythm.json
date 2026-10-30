@@ -1,0 +1,32 @@
+{
+  "name": "Gallop/Sine wave pattern",
+  "sendToBoth": true,
+  "rumble": {
+    "low": 0,
+    "high": 0
+  },
+  "left": {
+    "mode": 35,
+    "params": [
+      255,
+      255,
+      1,
+      2,
+      1,
+      1,
+      0
+    ]
+  },
+  "right": {
+    "mode": 35,
+    "params": [
+      255,
+      255,
+      1,
+      2,
+      1,
+      1,
+      0
+    ]
+  }
+}

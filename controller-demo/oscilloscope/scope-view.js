@@ -8,6 +8,8 @@ const SCOPE_CHANNELS = [
 function formatEng(value, unit) {
     if (!Number.isFinite(value))
         return "—";
+    if (value === 0)
+        return "0 " + unit;
     const sign = value < 0 ? "-" : "";
     const magnitude = Math.abs(value);
     const units = [

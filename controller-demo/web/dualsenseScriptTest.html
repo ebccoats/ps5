@@ -15,24 +15,6 @@
 
         const dsHandler = new GameControllerWebHandler();
 
-        const TRIGGER_MODES = [
-            { value: "linear", label: "Linear resistance", mode: 33, params: [255, 255, 0, 0, 0, 0, 0] },
-            { value: "linearTough", label: "Linear tougher resistance", mode: 33, params: [255, 255, 255, 255, 255, 255, 255] },
-            { value: "nonlinear", label: "Nonlinear resistance", mode: 34, params: [245, 208, 48, 255, 0, 0, 0] },
-            { value: "threshold", label: "Weapon/linear threshold", mode: 37, params: [144, 160, 255, 0, 0, 0, 0] },
-            { value: "bowThreshold", label: "Bow/nonlinear threshold", mode: 34, params: [255, 48, 255, 48, 0, 0, 0] },
-            { value: "vibration", label: "Vibration", mode: 6, params: [80, 1, 16, 0, 0, 0, 0] },
-            { value: "heartbeat", label: "Heartbeat", mode: 6, params: [1, 16, 1, 0, 0, 0, 0] },
-            { value: "mosquito", label: "Mosquito", mode: 6, params: [255, 16, 1, 0, 0, 0, 0] },
-            { value: "sineRhythm", label: "Gallop/Sine wave pattern", mode: 35, params: [255, 255, 1, 2, 1, 1, 0] },
-            { value: "brightLight", label: "Bright light?", mode: 35, params: [255, 1, 2, 96, 1, 1, 0] },
-            { value: "helicopter", label: "Riding in a helicopter", mode: 35, params: [255, 1, 2, 16, 1, 1, 0] },
-            { value: "squareRhythm", label: "Machine/Square wave pattern", mode: 39, params: [16, 255, 3, 16, 63, 223, 0] },
-            { value: "fadingbuzz", label: "Fading buzz", mode: 39, params: [16, 255, 3, 48, 63, 223, 0] },
-            { value: "none", label: "Reset after next pull", mode: 0, params: [0, 0, 0, 0, 0, 0, 0] },
-            { value: "limp", label: "Full zero", mode: 5, params: [0, 0, 0, 0, 0, 0, 0] },
-        ];
-
         const BUTTON_FIELDS = [
             ["buttoncross", "cross"],
             ["buttoncircle", "circle"],
@@ -188,9 +170,26 @@
                 ui[prefix + "effectparam" + (i + 1)].value = String(params[i] || 0);
         }
 
-        function applyPreset(mode) {
-            writeEffectFields("l2", mode.mode, mode.params);
-            writeEffectFields("r2", mode.mode, mode.params);
+        function applyPreset(preset) {
+            writeEffectFields("l2", preset.left.mode, preset.left.params);
+            writeEffectFields("r2", preset.right.mode, preset.right.params);
+        }
+
+        async function loadTriggerPresets() {
+            const indexResponse = await fetch("presets/index.json");
+            if (!indexResponse.ok)
+                throw new Error("Could not load presets");
+            const ids = await indexResponse.json();
+            const presets = [];
+            for (const id of ids) {
+                const response = await fetch("presets/" + id + ".json");
+                if (!response.ok)
+                    throw new Error("Could not load presets");
+                const preset = await response.json();
+                preset.id = id;
+                presets.push(preset);
+            }
+            return presets;
         }
 
         function buildPage() {
@@ -369,20 +368,26 @@
             const legend = document.createElement("legend");
             legend.textContent = "Trigger presets";
             fieldset.appendChild(legend);
-            for (const mode of TRIGGER_MODES) {
-                const label = document.createElement("label");
-                const radio = document.createElement("input");
-                radio.type = "radio";
-                radio.name = "triggerMode";
-                radio.value = mode.value;
-                radio.checked = mode.value === "limp";
-                radio.addEventListener("click", () => applyPreset(mode));
-                label.appendChild(radio);
-                label.appendChild(document.createTextNode(mode.label));
-                fieldset.appendChild(label);
-            }
             presetWrap.appendChild(fieldset);
             document.body.appendChild(presetWrap);
+            loadTriggerPresets().then(presets => {
+                for (const preset of presets) {
+                    const label = document.createElement("label");
+                    const radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = "triggerMode";
+                    radio.value = preset.id;
+                    radio.checked = preset.id === "limp";
+                    radio.addEventListener("click", () => applyPreset(preset));
+                    label.appendChild(radio);
+                    label.appendChild(document.createTextNode(preset.name));
+                    fieldset.appendChild(label);
+                }
+            }).catch(() => {
+                const note = document.createElement("p");
+                note.textContent = "Could not load presets.";
+                presetWrap.appendChild(note);
+            });
 
             const effectFields = document.createElement("div");
             const sides = [
